@@ -56,11 +56,19 @@ class MarkdownGenerator():
                             for t in tactic:
                                 content += f"- [[{t.name}]] ({t.id})\n" 
 
+                content += f"\n### Platforms\n"
+                for platform in technique.platforms:
+                    content += f"- {platform}\n"
+
+                content += f"\n### Permissions Required\n"
+                for permission in technique.permissions_required:
+                    content += f"- {permission}\n"
+
                 content += f"\n### Mitigations\n"
                 if technique.mitigations:
                     content += f"\n| ID | Name | Description |\n| --- | --- | --- |\n"
                     for mitigation in technique.mitigations:
-                        content += f"| [[{mitigation['mitigation'].id}]] | {mitigation['mitigation'].name} | {mitigation['description']} |\n"
+                        content += f"| [[{mitigation['mitigation'].id}\|{mitigation['mitigation'].name}]] | {mitigation['mitigation'].name} | {mitigation['description']} |\n"
 
                 if not technique.is_subtechnique:
                     content += f"\n### Sub-techniques\n"
@@ -88,7 +96,7 @@ class MarkdownGenerator():
             with open(mitigation_file, 'w') as fd:
                 content = f"---\nalias: {mitigation.name}\n---\n\n"
 
-                content += f"## {mitigation.name}\n\n"
+                content += f"## {mitigation.name}\n"
                 content += f"{mitigation.description}\n\n\n"
 
 

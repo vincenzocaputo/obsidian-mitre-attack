@@ -82,6 +82,8 @@ class StixParser():
 
             technique_obj.is_subtechnique = tech['x_mitre_is_subtechnique']
 
+            technique_obj.platforms = tech.get('x_mitre_platforms', [])
+            technique_obj.permissions_required = tech.get('x_mitre_permissions_required', [])
             technique_obj.description = tech['description']
 
             self.techniques.append(technique_obj)
@@ -98,23 +100,24 @@ class StixParser():
         self.mitigations = list()
 
         for mitigation in mitigations_stix:
-            mitigation_obj = MITREMitigation(mitigation['name'])
-            
-            mitigation_obj.internal_id = mitigation['id']
-            mitigation_obj.description = mitigation['description']
+            if mitigation.get('x_mitre_deprecated', False) != 'true': 
+                mitigation_obj = MITREMitigation(mitigation['name'])
+                
+                mitigation_obj.internal_id = mitigation['id']
+                mitigation_obj.description = mitigation['description']
 
-            ext_refs = mitigation.get('external_references', [])
+                ext_refs = mitigation.get('external_references', [])
 
-            for ext_ref in ext_refs:
-                if ext_ref['source_name'] == 'mitre-attack':
-                    mitigation_obj.id = ext_ref['external_id']
-                    
-            mitigation_relationships = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'mitigates'), Filter('source_ref', '=', mitigation_obj.internal_id) ])
+                for ext_ref in ext_refs:
+                    if ext_ref['source_name'] == 'mitre-attack':
+                        mitigation_obj.id = ext_ref['external_id']
+                        
+                mitigation_relationships = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'mitigates'), Filter('source_ref', '=', mitigation_obj.internal_id) ])
 
-            for relationship in mitigation_relationships:
-                for technique in self.techniques:
-                    if technique.internal_id == relationship['target_ref']:
-                        mitigation_obj.mitigates = {'technique': technique, 'description': relationship.get('description', '') }
-                        technique.mitigations = {'mitigation': mitigation_obj, 'description': relationship.get('description', '') }
+                for relationship in mitigation_relationships:
+                    for technique in self.techniques:
+                        if technique.internal_id == relationship['target_ref']:
+                            mitigation_obj.mitigates = {'technique': technique, 'description': relationship.get('description', '') }
+                            technique.mitigations = {'mitigation': mitigation_obj, 'description': relationship.get('description', '') }
 
-            self.mitigations.append(mitigation_obj)
+                self.mitigations.append(mitigation_obj)

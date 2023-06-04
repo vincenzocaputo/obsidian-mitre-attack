@@ -86,6 +86,22 @@ class MITRETechnique(MITREObject):
         self._is_subtechnique = is_subtechnique
 
     @property
+    def platforms(self):
+        return self._platforms
+
+    @platforms.setter
+    def platforms(self, platforms):
+        self._platforms = platforms
+
+    @property
+    def permissions_required(self):
+        return self._permissions_required
+
+    @permissions_required.setter
+    def permissions_required(self, permissions_required):
+        self._permissions_required = permissions_required
+
+    @property
     def mitigations(self):
         return self._mitigations
 
