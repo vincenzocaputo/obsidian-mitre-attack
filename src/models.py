@@ -55,6 +55,7 @@ class MITRETechnique(MITREObject):
 
     def __init__(self, name):
         MITREObject.__init__(self, name)
+        self._kill_chain_phases = list()
 
     
     @property
@@ -63,10 +64,10 @@ class MITRETechnique(MITREObject):
 
     @kill_chain_phases.setter
     def kill_chain_phases(self, kill_chain_phase:dict):
-        if 'kill_chain_name' not in kill_chain_phase or 'phase_name' not in kill_chain_phases:
+        if 'kill_chain_name' not in kill_chain_phase or 'phase_name' not in kill_chain_phase:
             raise ValueError("The parameter provided is not supported")
 
-        self._kill_chain_phases[kill_chain_phase['kill_chain_name']] = kill_chain_phase['phase_name']
+        self._kill_chain_phases.append(kill_chain_phase)
 
     @property
     def is_subtechnique(self):

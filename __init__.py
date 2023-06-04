@@ -12,9 +12,10 @@ if __name__ == '__main__':
     parser = StixParser(config['repository_url'], config['domain'])
 
     tactics = parser.get_tactics()
+    techniques = parser.get_techniques()
 
-    markdown_generator = MarkdownGenerator(config['output_dir'])
-
-    markdown_generator.create_tactic_notes(tactics)
+    markdown_generator = MarkdownGenerator(config['output_dir'], tactics, techniques)
+    markdown_generator.create_tactic_notes()
+    markdown_generator.create_technique_notes()
 
     
