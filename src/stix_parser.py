@@ -1,7 +1,7 @@
 from stix2 import Filter
 from stix2 import MemoryStore
 import requests
-from .models import MITRETactic, MITRETechnique
+from .models import MITRETactic, MITRETechnique, MITREMitigation
 
 class StixParser():
     """
@@ -18,19 +18,22 @@ class StixParser():
 
         self.src = MemoryStore(stix_data=stix_json['objects'])
 
+    
+    def get_data(self):
+        self._get_tactics()
+        self._get_techniques()
+        self._get_mitigations()
 
 
-    def get_tactics(self):
+    def _get_tactics(self):
         """
         Get and parse tactics from STIX data
-
-        :return: Array of Tactics object containing information about tactics
         """
 
         # Extract tactics
         tactics_stix = self.src.query([ Filter('type', '=', 'x-mitre-tactic') ])
 
-        tactics = list()
+        self.tactics = list()
 
         for tactic in tactics_stix:
             tactic_obj = MITRETactic(tactic['name'])
@@ -45,24 +48,23 @@ class StixParser():
 
             tactic_obj.description = tactic['description']
 
-            tactics.append(tactic_obj)
-        return tactics
+            self.tactics.append(tactic_obj)
 
-
-    def get_techniques(self):
+    def _get_techniques(self):
         """
         Get and parse techniques from STIX data
-
-        :return: Array of Techniques object containing information about techniques
         """
 
         # Extract techniques
         tech_stix = self.src.query([ Filter('type', '=', 'attack-pattern') ])
 
-        techniques = list()
+        self.techniques = list()
 
         for tech in tech_stix:
             technique_obj = MITRETechnique(tech['name'])
+
+            technique_obj.internal_id = tech['id']
+
             # Extract external references, including the link to mitre
             ext_refs = tech.get('external_references', [])
 
@@ -79,7 +81,40 @@ class StixParser():
                 technique_obj.kill_chain_phases = kill_phase
 
             technique_obj.is_subtechnique = tech['x_mitre_is_subtechnique']
+
             technique_obj.description = tech['description']
 
-            techniques.append(technique_obj)
-        return techniques
+            self.techniques.append(technique_obj)
+
+
+    def _get_mitigations(self):
+        """
+        Get and parse techniques from STIX data
+        """
+
+        # Extract mitigations
+        mitigations_stix = self.src.query([ Filter('type', '=', 'course-of-action') ])
+
+        self.mitigations = list()
+
+        for mitigation in mitigations_stix:
+            mitigation_obj = MITREMitigation(mitigation['name'])
+            
+            mitigation_obj.internal_id = mitigation['id']
+            mitigation_obj.description = mitigation['description']
+
+            ext_refs = mitigation.get('external_references', [])
+
+            for ext_ref in ext_refs:
+                if ext_ref['source_name'] == 'mitre-attack':
+                    mitigation_obj.id = ext_ref['external_id']
+                    
+            mitigation_relationships = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'mitigates'), Filter('source_ref', '=', mitigation_obj.internal_id) ])
+
+            for relationship in mitigation_relationships:
+                for technique in self.techniques:
+                    if technique.internal_id == relationship['target_ref']:
+                        mitigation_obj.mitigates = {'technique': technique, 'description': relationship.get('description', '') }
+                        technique.mitigations = {'mitigation': mitigation_obj, 'description': relationship.get('description', '') }
+
+            self.mitigations.append(mitigation_obj)

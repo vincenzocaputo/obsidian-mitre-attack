@@ -9,10 +9,11 @@ import os
 
 class MarkdownGenerator():
 
-    def __init__(self, output_dir, tactics=[], techniques=[]):
+    def __init__(self, output_dir, tactics=[], techniques=[], mitigations=[]):
         self.output_dir = os.path.join(ROOT, output_dir)
         self.tactics = tactics
         self.techniques = techniques
+        self.mitigations = mitigations
 
     def create_tactic_notes(self):
         tactics_dir = os.path.join(self.output_dir, "tactics")
@@ -47,7 +48,7 @@ class MarkdownGenerator():
                 content += f"{technique.description}\n\n\n"
 
 
-                content += f"### Tactic\n\n"
+                content += f"### Tactic\n"
                 for kill_chain in technique.kill_chain_phases:
                     if kill_chain['kill_chain_name'] == 'mitre-attack':
                         tactic = [ t for t in self.tactics if t.name.lower().replace(' ', '-') == kill_chain['phase_name'].lower() ]
@@ -55,6 +56,11 @@ class MarkdownGenerator():
                             for t in tactic:
                                 content += f"- [[{t.name}]] ({t.id})\n" 
 
+                content += f"\n### Mitigations\n"
+                if technique.mitigations:
+                    content += f"\n| ID | Name | Description |\n| --- | --- | --- |\n"
+                    for mitigation in technique.mitigations:
+                        content += f"| [[{mitigation['mitigation'].id}]] | {mitigation['mitigation'].name} | {mitigation['description']} |\n"
 
                 if not technique.is_subtechnique:
                     content += f"\n### Sub-techniques\n"
@@ -68,5 +74,29 @@ class MarkdownGenerator():
                 content += f"\n\n---\n### References\n\n"
                 for ref in technique.references.keys():
                     content += f"- {ref}: {technique.references[ref]}\n"
+
+                fd.write(content)
+
+    def create_mitigation_notes(self):
+        mitigations_dir = os.path.join(self.output_dir, "mitigations")
+        if not os.path.exists(mitigations_dir):
+            os.mkdir(mitigations_dir)
+
+        for mitigation in self.mitigations:
+            mitigation_file = os.path.join(mitigations_dir, f"{mitigation.id}.md")
+
+            with open(mitigation_file, 'w') as fd:
+                content = f"---\nalias: {mitigation.name}\n---\n\n"
+
+                content += f"## {mitigation.name}\n\n"
+                content += f"{mitigation.description}\n\n\n"
+
+
+                content += f"### Techniques Addressed by Mitigation\n"
+                if mitigation.mitigates:
+                    content += f"\n| ID | Name | Description |\n| --- | --- | --- |\n"
+                    for technique in mitigation.mitigates:
+                        content += f"| [[{technique['technique'].id}]] | {technique['technique'].name} | {technique['description']} |"
+
 
                 fd.write(content)

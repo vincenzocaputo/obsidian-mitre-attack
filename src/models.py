@@ -56,8 +56,16 @@ class MITRETechnique(MITREObject):
     def __init__(self, name):
         MITREObject.__init__(self, name)
         self._kill_chain_phases = list()
+        self._mitigations = list()
 
-    
+    @property
+    def internal_id(self):
+        return self._internal_id
+
+    @internal_id.setter
+    def internal_id(self, internal_id):
+        self._internal_id = internal_id
+
     @property
     def kill_chain_phases(self):
         return self._kill_chain_phases
@@ -76,3 +84,46 @@ class MITRETechnique(MITREObject):
     @is_subtechnique.setter
     def is_subtechnique(self, is_subtechnique:bool):
         self._is_subtechnique = is_subtechnique
+
+    @property
+    def mitigations(self):
+        return self._mitigations
+
+    @mitigations.setter
+    def mitigations(self, mitigation:dict):
+        self._mitigations.append(mitigation)
+
+
+class MITREMitigation(MITREObject):
+    """
+    Define a mitigation (course-of-action)
+    """
+
+    def __init__(self, name):
+        MITREObject.__init__(self, name)
+        self._mitigates = list()
+
+    @property
+    def is_deprecated(self):
+        return self._is_deprecated
+
+    @is_deprecated.setter
+    def is_deprecated(self, is_deprecated):
+        self._is_deprecated
+
+    @property
+    def internal_id(self):
+        return self._internal_id
+
+    @internal_id.setter
+    def internal_id(self, internal_id):
+        self._internal_id = internal_id
+
+    @property
+    def mitigates(self):
+        return self._mitigates
+
+    @mitigates.setter
+    def mitigates(self, mitigated_technique:dict):
+        self._mitigates.append(mitigated_technique)
+
