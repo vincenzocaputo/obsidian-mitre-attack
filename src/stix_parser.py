@@ -40,6 +40,35 @@ class StixParser():
             for ext_ref in ext_refs:
                 if ext_ref['source_name'] == 'mitre-attack':
                     tactic_obj.id = ext_ref['external_id']
+                
+                tactic_obj.references = {'name': ext_ref['source_name'], 'url': ext_ref['url']}
+
+            tactic_obj.description = tactic['description']
+
+            tactics.append(tactic_obj)
+        return tactics
+
+
+    def get_techniques(self):
+        """
+        Get and parse techniques from STIX data
+
+        :return: Array of Techniques object containing information about techniques
+        """
+
+        # Extract techniques
+        tech_stix = self.src.query([ Filter('type', '=', 'attack-pattern') ])
+
+        techniques = list()
+
+        for tech in techniques_stix:
+            techniques_obj = Techniques(tech['name'])
+            # Extract external references, including the link to mitre
+            ext_refs = techniques.get('external_references', [])
+
+            for ext_ref in ext_refs:
+                if ext_ref['source_name'] == 'mitre-attack':
+                    tactic_obj.id = ext_ref['external_id']
                     tactic_obj.mitre_url = ext_ref['url']
 
             tactic_obj.description = tactic['description']

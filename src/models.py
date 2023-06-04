@@ -6,6 +6,7 @@ class Tactic():
 
     def __init__(self, name):
         self._name = name
+        self._references = dict()
 
     @property
     def name(self):
@@ -28,9 +29,13 @@ class Tactic():
         self._id = id
 
     @property
-    def mitre_url(self):
-        return self._mitre_url
+    def references(self):
+        return self._references
 
-    @mitre_url.setter
-    def mitre_url(self, mitre_url):
-        self._mitre_url = mitre_url
+    @references.setter
+    def references(self, reference:dict):
+        if 'name' not in reference or 'url' not in reference:
+            raise ValueError("The parameter provided is not supported")
+
+        self._references[reference['name']] = reference['url']
+

@@ -22,10 +22,12 @@ class MarkdownGenerator():
             tactic_file = os.path.join(tactics_dir, f"{tactic.name}.md")
 
             with open(tactic_file, 'w') as fd:
-                content = f"---\nalias: {tactic.id}\n"
-                content += f"source: {tactic.mitre_url}\n---"
-                content += f"\n{tactic.description}\n"
+                content = f"---\nalias: {tactic.id}\n---"
+                content += f"\n{tactic.description}\n\n---\n"
                 
+                content += f"## References\n"
+                for ref in tactic.references.keys():
+                    content += f"- {ref}: {tactic.references[ref]}\n"
                 fd.write(content)
 
 
