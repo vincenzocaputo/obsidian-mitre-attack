@@ -1,5 +1,5 @@
 
-class Tactic():
+class MITREObject():
     """
     Define a tactic (x-mitre-tactic)
     """
@@ -39,3 +39,39 @@ class Tactic():
 
         self._references[reference['name']] = reference['url']
 
+class MITRETactic(MITREObject):
+    """
+    Define a tactic (x-mitre-tactic)
+    """
+
+    def __init__(self, name):
+        MITREObject.__init__(self, name)
+
+
+class MITRETechnique(MITREObject):
+    """
+    Define a technique (attack-pattern)
+    """
+
+    def __init__(self, name):
+        MITREObject.__init__(self, name)
+
+    
+    @property
+    def kill_chain_phases(self):
+        return self._kill_chain_phases
+
+    @kill_chain_phases.setter
+    def kill_chain_phases(self, kill_chain_phase:dict):
+        if 'kill_chain_name' not in kill_chain_phase or 'phase_name' not in kill_chain_phases:
+            raise ValueError("The parameter provided is not supported")
+
+        self._kill_chain_phases[kill_chain_phase['kill_chain_name']] = kill_chain_phase['phase_name']
+
+    @property
+    def is_subtechnique(self):
+        return self._is_subtechnique
+
+    @is_subtechnique.setter
+    def is_subtechnique(self, is_subtechnique:bool):
+        self._is_subtechnique = is_subtechnique

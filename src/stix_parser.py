@@ -1,7 +1,7 @@
 from stix2 import Filter
 from stix2 import MemoryStore
 import requests
-from .models import Tactic
+from .models import MITRETactic
 
 class StixParser():
     """
@@ -33,7 +33,7 @@ class StixParser():
         tactics = list()
 
         for tactic in tactics_stix:
-            tactic_obj = Tactic(tactic['name'])
+            tactic_obj = MITRETactic(tactic['name'])
             # Extract external references, including the link to mitre
             ext_refs = tactic.get('external_references', [])
 
