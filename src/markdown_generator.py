@@ -25,6 +25,7 @@ class MarkdownGenerator():
 
             with open(tactic_file, 'w') as fd:
                 content = f"---\nalias: {tactic.id}\n---"
+                content += f"\n\n## {tactic.id}\n"
                 content += f"\n{tactic.description}\n\n---\n"
                 
                 content += f"### References\n"
@@ -39,12 +40,12 @@ class MarkdownGenerator():
             os.mkdir(techniques_dir)
 
         for technique in self.techniques:
-            technique_file = os.path.join(techniques_dir, f"{technique.id}.md")
+            technique_file = os.path.join(techniques_dir, f"{technique.name}.md")
 
             with open(technique_file, 'w') as fd:
-                content = f"---\nalias: {technique.name}\n---\n\n"
+                content = f"---\nalias: {technique.id}\n---\n\n"
 
-                content += f"## {technique.name}\n\n"
+                content += f"## {technique.id}\n\n"
                 content += f"{technique.description}\n\n\n"
 
 
@@ -68,7 +69,7 @@ class MarkdownGenerator():
                 if technique.mitigations:
                     content += f"\n| ID | Name | Description |\n| --- | --- | --- |\n"
                     for mitigation in technique.mitigations:
-                        content += f"| [[{mitigation['mitigation'].id}\|{mitigation['mitigation'].name}]] | {mitigation['mitigation'].name} | {mitigation['description']} |\n"
+                        content += f"| [[{mitigation['mitigation'].name}\|{mitigation['mitigation'].id}]] | {mitigation['mitigation'].name} | {mitigation['description']} |\n"
 
                 if not technique.is_subtechnique:
                     content += f"\n### Sub-techniques\n"
@@ -91,12 +92,13 @@ class MarkdownGenerator():
             os.mkdir(mitigations_dir)
 
         for mitigation in self.mitigations:
-            mitigation_file = os.path.join(mitigations_dir, f"{mitigation.id}.md")
+            mitigation_filename = mitigation.name.replace('/', '／')
+            mitigation_file = os.path.join(mitigations_dir, f"{mitigation_filename}.md")
 
             with open(mitigation_file, 'w') as fd:
-                content = f"---\nalias: {mitigation.name}\n---\n\n"
+                content = f"---\nalias: {mitigation.id}\n---\n\n"
 
-                content += f"## {mitigation.name}\n"
+                content += f"## {mitigation.id}\n\n"
                 content += f"{mitigation.description}\n\n\n"
 
 
@@ -104,7 +106,8 @@ class MarkdownGenerator():
                 if mitigation.mitigates:
                     content += f"\n| ID | Name | Description |\n| --- | --- | --- |\n"
                     for technique in mitigation.mitigates:
-                        content += f"| [[{technique['technique'].id}]] | {technique['technique'].name} | {technique['description']} |"
+                        description = technique['description'].replace('\n', '<br />')
+                        content += f"| [[{technique['technique'].name}\|{technique['technique'].id}]] | {technique['technique'].name} | {description} |\n"
 
 
                 fd.write(content)
