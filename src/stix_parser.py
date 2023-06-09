@@ -1,7 +1,7 @@
 from stix2 import Filter
 from stix2 import MemoryStore
 import requests
-from .models import MITRETactic, MITRETechnique, MITREMitigation
+from .models import MITRETactic, MITRETechnique, MITREMitigation, MITREGroup
 
 class StixParser():
     """
@@ -23,6 +23,7 @@ class StixParser():
         self._get_tactics()
         self._get_techniques()
         self._get_mitigations()
+        self._get_groups()
 
 
     def _get_tactics(self):
@@ -61,32 +62,33 @@ class StixParser():
         self.techniques = list()
 
         for tech in tech_stix:
-            technique_obj = MITRETechnique(tech['name'])
+            if not tech.get('x_mitre_deprecated', False): 
+                technique_obj = MITRETechnique(tech['name'])
 
-            technique_obj.internal_id = tech['id']
+                technique_obj.internal_id = tech['id']
 
-            # Extract external references, including the link to mitre
-            ext_refs = tech.get('external_references', [])
+                # Extract external references, including the link to mitre
+                ext_refs = tech.get('external_references', [])
 
-            for ext_ref in ext_refs:
-                if ext_ref['source_name'] == 'mitre-attack':
-                    technique_obj.id = ext_ref['external_id']
-                    
-                if 'url' in ext_ref:
-                    technique_obj.references = {'name': ext_ref['source_name'], 'url': ext_ref['url']}
+                for ext_ref in ext_refs:
+                    if ext_ref['source_name'] == 'mitre-attack':
+                        technique_obj.id = ext_ref['external_id']
+                        
+                    if 'url' in ext_ref:
+                        technique_obj.references = {'name': ext_ref['source_name'], 'url': ext_ref['url']}
 
-            kill_chain = tech.get('kill_chain_phases', [])
+                kill_chain = tech.get('kill_chain_phases', [])
 
-            for kill_phase in kill_chain:
-                technique_obj.kill_chain_phases = kill_phase
+                for kill_phase in kill_chain:
+                    technique_obj.kill_chain_phases = kill_phase
 
-            technique_obj.is_subtechnique = tech['x_mitre_is_subtechnique']
+                technique_obj.is_subtechnique = tech['x_mitre_is_subtechnique']
 
-            technique_obj.platforms = tech.get('x_mitre_platforms', [])
-            technique_obj.permissions_required = tech.get('x_mitre_permissions_required', [])
-            technique_obj.description = tech['description']
+                technique_obj.platforms = tech.get('x_mitre_platforms', [])
+                technique_obj.permissions_required = tech.get('x_mitre_permissions_required', [])
+                technique_obj.description = tech['description']
 
-            self.techniques.append(technique_obj)
+                self.techniques.append(technique_obj)
 
 
     def _get_mitigations(self):
@@ -100,7 +102,7 @@ class StixParser():
         self.mitigations = list()
 
         for mitigation in mitigations_stix:
-            if mitigation.get('x_mitre_deprecated', False) != 'true': 
+            if not mitigation.get('x_mitre_deprecated', False): 
                 mitigation_obj = MITREMitigation(mitigation['name'])
                 
                 mitigation_obj.internal_id = mitigation['id']
@@ -121,3 +123,41 @@ class StixParser():
                             technique.mitigations = {'mitigation': mitigation_obj, 'description': relationship.get('description', '') }
 
                 self.mitigations.append(mitigation_obj)
+
+    def _get_groups(self):
+        """
+        Get and parse groups from STIX data
+        """
+
+        # Extract groups
+        groups_stix = self.src.query([ Filter('type', '=', 'intrusion-set') ])
+
+        self.groups = list()
+
+        for group in groups_stix:
+            if group.get('x_mitre_deprecated', False) != 'true':
+                group_obj = MITREGroup(group['name'])
+
+                group_obj.internal_id = group['id']
+
+                # Extract external references, including the link to mitre
+                ext_refs = group.get('external_references', [])
+
+                for ext_ref in ext_refs:
+                    if ext_ref['source_name'] == 'mitre-attack':
+                        group_obj.id = ext_ref['external_id']
+                        
+                    if 'url' in ext_ref:
+                        group_obj.references = {'name': ext_ref['source_name'], 'url': ext_ref['url']}
+
+                group_relationships = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', group_obj.internal_id) ])
+
+                for relationship in group_relationships:
+                    for technique in self.techniques:
+                        if technique.internal_id == relationship['target_ref']:
+                            group_obj.techniques_used = {'technique': technique, 'description': relationship.get('description', '') }
+                            technique.groups = {'group': group_obj, 'description': relationship.get('description', '') }
+                group_obj.aliases = group.get('aliases', [])
+                group_obj.description = group.get('description', '')
+
+                self.groups.append(group_obj)

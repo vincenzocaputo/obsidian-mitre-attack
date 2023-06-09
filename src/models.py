@@ -61,6 +61,7 @@ class MITRETechnique(MITREObject):
         MITREObject.__init__(self, name)
         self._kill_chain_phases = list()
         self._mitigations = list()
+        self._groups = list()
 
     @property
     def internal_id(self):
@@ -113,6 +114,14 @@ class MITRETechnique(MITREObject):
     def mitigations(self, mitigation:dict):
         self._mitigations.append(mitigation)
 
+    @property
+    def groups(self):
+        return self._groups
+
+    @groups.setter
+    def groups(self, group:dict):
+        self.groups.append(group)
+
 
 class MITREMitigation(MITREObject):
     """
@@ -129,7 +138,7 @@ class MITREMitigation(MITREObject):
 
     @is_deprecated.setter
     def is_deprecated(self, is_deprecated):
-        self._is_deprecated
+        self._is_deprecated = is_deprecated
 
     @property
     def internal_id(self):
@@ -147,3 +156,37 @@ class MITREMitigation(MITREObject):
     def mitigates(self, mitigated_technique:dict):
         self._mitigates.append(mitigated_technique)
 
+
+class MITREGroup(MITREObject):
+    """
+    Define a group
+    """
+
+    def __init__(self, name):
+        MITREObject.__init__(self, name)
+        self._aliases = list()
+        self._techniques_used = list()
+
+    @property
+    def internal_id(self):
+        return self._internal_id
+
+    @internal_id.setter
+    def internal_id(self, internal_id):
+        self._internal_id = internal_id
+
+    @property
+    def aliases(self):
+        return self._aliases
+
+    @aliases.setter
+    def aliases(self, alias):
+        self._aliases = alias
+
+    @property
+    def techniques_used(self):
+        return self._techniques_used
+
+    @techniques_used.setter
+    def techniques_used(self, technique_used:dict):
+        self._techniques_used.append(technique_used)

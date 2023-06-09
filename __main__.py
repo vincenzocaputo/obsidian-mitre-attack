@@ -31,9 +31,10 @@ if __name__ == '__main__':
 
     parser.get_data()
 
-    markdown_generator = MarkdownGenerator(output_dir, parser.tactics, parser.techniques, parser.mitigations)
+    markdown_generator = MarkdownGenerator(output_dir, parser.tactics, parser.techniques, parser.mitigations, parser.groups)
     markdown_generator.create_tactic_notes()
     markdown_generator.create_technique_notes()
     markdown_generator.create_mitigation_notes()
+    markdown_generator.create_group_notes()
 
     

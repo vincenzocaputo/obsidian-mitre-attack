@@ -9,11 +9,12 @@ import os
 
 class MarkdownGenerator():
 
-    def __init__(self, output_dir, tactics=[], techniques=[], mitigations=[]):
+    def __init__(self, output_dir, tactics=[], techniques=[], mitigations=[], groups=[]):
         self.output_dir = os.path.join(ROOT, output_dir)
         self.tactics = tactics
         self.techniques = techniques
         self.mitigations = mitigations
+        self.groups = groups
 
     def create_tactic_notes(self):
         tactics_dir = os.path.join(self.output_dir, "tactics")
@@ -69,7 +70,8 @@ class MarkdownGenerator():
                 if technique.mitigations:
                     content += f"\n| ID | Name | Description |\n| --- | --- | --- |\n"
                     for mitigation in technique.mitigations:
-                        content += f"| [[{mitigation['mitigation'].name}\|{mitigation['mitigation'].id}]] | {mitigation['mitigation'].name} | {mitigation['description']} |\n"
+                        description = mitigation['description'].replace('\n', '<br />')
+                        content += f"| [[{mitigation['mitigation'].name}\|{mitigation['mitigation'].id}]] | {mitigation['mitigation'].name} | {description} |\n"
 
                 if not technique.is_subtechnique:
                     content += f"\n### Sub-techniques\n"
@@ -77,7 +79,7 @@ class MarkdownGenerator():
                     if subtechniques:
                         content += f"\n| ID | Name |\n| --- | --- |\n"
                     for subt in subtechniques:
-                        content += f"| [[{subt.id}]] | {subt.name} |\n"
+                        content += f"| [[{subt.name}\|{subt.id}]] | {subt.name} |\n"
 
 
                 content += f"\n\n---\n### References\n\n"
@@ -92,8 +94,7 @@ class MarkdownGenerator():
             os.mkdir(mitigations_dir)
 
         for mitigation in self.mitigations:
-            mitigation_filename = mitigation.name.replace('/', '／')
-            mitigation_file = os.path.join(mitigations_dir, f"{mitigation_filename}.md")
+            mitigation_file = os.path.join(mitigations_dir, f"{mitigation.name}.md")
 
             with open(mitigation_file, 'w') as fd:
                 content = f"---\nalias: {mitigation.id}\n---\n\n"
@@ -111,3 +112,28 @@ class MarkdownGenerator():
 
 
                 fd.write(content)
+
+    def create_group_notes(self):
+        groups_dir = os.path.join(self.output_dir, "groups")
+        if not os.path.exists(groups_dir):
+            os.mkdir(groups_dir)
+
+        for group in self.groups:
+            group_file = os.path.join(groups_dir, f"{group.name}.md")
+
+            with open(group_file, 'w') as fd:
+                content = f"---\nalias: {', '.join(group.aliases)}\n---\n\n"
+
+                content += f"## {group.id}\n\n"
+                content += f"{group.description}\n\n\n"
+
+                content += f"### Techniques Used\n"
+
+                if group.techniques_used:
+                    content += f"\n| ID | Name | Use |\n| --- | --- | --- |\n"
+                    for technique in group.techniques_used:
+                        description = technique['description'].replace('\n', '<br />')
+                        content += f"| [[{technique['technique'].name}\|{technique['technique'].id}]] | {technique['technique'].name} | {description} |\n"
+
+                fd.write(content)
+
