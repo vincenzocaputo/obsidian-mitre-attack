@@ -1,5 +1,6 @@
 from src.stix_parser import StixParser
 from src.markdown_generator import MarkdownGenerator
+from src.view import create_graph_json
 import argparse
 import os
 import yaml
@@ -38,3 +39,4 @@ if __name__ == '__main__':
     markdown_generator.create_group_notes()
 
     
+    create_graph_json(output_dir)
