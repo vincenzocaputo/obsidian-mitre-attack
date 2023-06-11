@@ -37,6 +37,7 @@ if __name__ == '__main__':
     markdown_generator.create_technique_notes()
     markdown_generator.create_mitigation_notes()
     markdown_generator.create_group_notes()
+    markdown_generator.create_canvas()
 
     
     create_graph_json(output_dir)
