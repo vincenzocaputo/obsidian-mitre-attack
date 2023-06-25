@@ -10,8 +10,9 @@ import uuid
 
 class MarkdownGenerator():
 
-    def __init__(self, output_dir, tactics=[], techniques=[], mitigations=[], groups=[]):
-        self.output_dir = os.path.join(ROOT, output_dir)
+    def __init__(self, output_dir=None, tactics=[], techniques=[], mitigations=[], groups=[]):
+        if output_dir:
+            self.output_dir = os.path.join(ROOT, output_dir)
         self.tactics = tactics
         self.techniques = techniques
         self.mitigations = mitigations
@@ -142,7 +143,7 @@ class MarkdownGenerator():
                 fd.write(content)
 
 
-    def create_canvas(self):
+    def create_canvas(self, canvas_name, filtered_techniques):
         canvas = {
                 "nodes": [],
                 "edges": []
@@ -166,6 +167,56 @@ class MarkdownGenerator():
                     "Exfiltration": 6000,
                     "Impact": 6500,
                 }
+
+
+        rows = dict()
+        height = 144
+        y = 50
+        max_height = y
+        for technique in self.techniques:
+            if technique.id in filtered_techniques:
+                if not technique.is_subtechnique:
+                    for kill_chain in technique.kill_chain_phases:
+                        if kill_chain['kill_chain_name'] == 'mitre-attack':
+                            tactic = [ t for t in self.tactics if t.name.lower().replace(' ', '-') == kill_chain['phase_name'].lower() ]
+                            if tactic:
+                                if tactic[0].name in rows.keys():
+                                    y = rows[tactic[0].name]
+                                else:
+                                    y = 50
+                                    rows[tactic[0].name] = y
+                                x = columns[tactic[0].name] + 20
+
+                    technique_node = {
+                                "type": "file",
+                                "file": f"techniques/{technique.name}.md",
+                                "id": uuid.uuid4().hex,
+                                "x": x,
+                                "y": y,
+                                "width": 450,
+                                "height": height
+                            }
+                    canvas['nodes'].append(technique_node)
+                    y = y + height + 20
+                    subtechniques = [ subt for subt in self.techniques if subt.is_subtechnique and technique.id in subt.id ]
+                    if subtechniques:
+                        for subt in subtechniques:
+                            subtech_node = {
+                                        "type": "file",
+                                        "file": f"techniques/{subt.name}.md",
+                                        "id": uuid.uuid4().hex,
+                                        "x": x + 50,
+                                        "y": y,
+                                        "width": 400,
+                                        "height": height
+                                    }
+                            y = y + height + 20
+                            canvas['nodes'].append(subtech_node)
+                    
+                    rows[tactic[0].name] = y
+                    if y > max_height:
+                        max_height = y
+
         for tactic in self.tactics:
             container_node = {
                         "type": "group",
@@ -174,56 +225,12 @@ class MarkdownGenerator():
                         "x": columns[tactic.name],
                         "y": 0,
                         "width": 500,
-                        "height": 24744
+                        "height": max_height + 20
                     }
             canvas['nodes'].append(container_node)
-
-
-        rows = dict()
-        height = 144
-        y = 50
-        for technique in self.techniques:
-            if not technique.is_subtechnique:
-                for kill_chain in technique.kill_chain_phases:
-                    if kill_chain['kill_chain_name'] == 'mitre-attack':
-                        tactic = [ t for t in self.tactics if t.name.lower().replace(' ', '-') == kill_chain['phase_name'].lower() ]
-                        if tactic:
-                            if tactic[0].name in rows.keys():
-                                y = rows[tactic[0].name]
-                            else:
-                                y = 50
-                                rows[tactic[0].name] = y
-                            x = columns[tactic[0].name] + 20
-
-                technique_node = {
-                            "type": "file",
-                            "file": f"techniques/{technique.name}.md",
-                            "id": uuid.uuid4().hex,
-                            "x": x,
-                            "y": y,
-                            "width": 450,
-                            "height": height
-                        }
-                canvas['nodes'].append(technique_node)
-                y = y + height + 20
-                subtechniques = [ subt for subt in self.techniques if subt.is_subtechnique and technique.id in subt.id ]
-                if subtechniques:
-                    for subt in subtechniques:
-                        subtech_node = {
-                                    "type": "file",
-                                    "file": f"techniques/{subt.name}.md",
-                                    "id": uuid.uuid4().hex,
-                                    "x": x + 50,
-                                    "y": y,
-                                    "width": 400,
-                                    "height": height
-                                }
-                        y = y + height + 20
-                        canvas['nodes'].append(subtech_node)
-                rows[tactic[0].name] = y
                         
             
-        with open('matrix.canvas', 'w') as fd:
+        with open(f"{canvas_name}.canvas", 'w') as fd:
             fd.write(json.dumps(canvas, indent=2))
             
 

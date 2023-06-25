@@ -31,3 +31,10 @@ class MarkdownReader():
         with open(self.__file_path, 'w') as fd:
             fd.write(self.__content)
 
+
+    def find_techniques(self):
+        regex = "T[0-9]{4}(?:\.[0-9]{3})?"
+
+        found_techniques = re.findall(regex, self.__content)
+
+        return found_techniques
