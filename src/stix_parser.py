@@ -62,7 +62,7 @@ class StixParser():
         self.techniques = list()
 
         for tech in tech_stix:
-            if not tech.get('x_mitre_deprecated', False): 
+            if 'x_mitre_deprecated' not in tech or not tech['x_mitre_deprecated']:
                 technique_obj = MITRETechnique(tech['name'])
 
                 technique_obj.internal_id = tech['id']

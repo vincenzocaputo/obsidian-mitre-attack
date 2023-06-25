@@ -33,6 +33,27 @@ Run the application specifying the output directory path (i.e.: your obsidian va
 python . -o obsidian_vault_path
 ```
 
+### Options
+
+```
+usage: . [-h] [-d DOMAIN] [-o OUTPUT] [--generate-hyperlinks] [--generate-matrix] [--path PATH]
+
+Downdload MITRE ATT&CK STIX data and parse it to Obsidian markdown notes
+
+options:
+  -h, --help            show this help message and exit
+  -d DOMAIN, --domain DOMAIN
+                        Domain should be 'enterprise-attack', 'mobile-attack' or 'ics-attack'
+  -o OUTPUT, --output OUTPUT
+                        Output directory in which the notes will be saved. It should be placed inside a Obsidian
+                        vault.
+  --generate-hyperlinks
+                        Generate techniques hyperlinks in a markdown note file
+  --generate-matrix     Create ATT&CK matrix starting from a markdown note file
+  --path PATH           Filepath to the markdown note file
+```
+
+
 ## Images and Examples
 
 ![immagine](https://github.com/vincenzocaputo/obsidian-mitre-attack/assets/32276363/4612103a-2f25-4f6a-9a86-cf6bf9714334)
