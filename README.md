@@ -56,9 +56,13 @@ options:
 
 ## Images and Examples
 
-![immagine](https://github.com/vincenzocaputo/obsidian-mitre-attack/assets/32276363/4612103a-2f25-4f6a-9a86-cf6bf9714334)
-![immagine](https://github.com/vincenzocaputo/obsidian-mitre-attack/assets/32276363/edb1d85c-fa06-4ee1-9fe1-75d2a339fe9b)
+![immagine](https://github.com/vincenzocaputo/obsidian-mitre-attack/assets/32276363/f9e3aa4d-fdae-44b7-9036-616ed9f61d69)
 
-![immagine](https://github.com/vincenzocaputo/obsidian-mitre-attack/assets/32276363/f667e05d-3939-4684-8731-8207c364b038)
+![immagine](https://github.com/vincenzocaputo/obsidian-mitre-attack/assets/32276363/67b600e4-9928-494e-ac55-bd1e2e2f1ddd)
 
-![immagine](https://github.com/vincenzocaputo/obsidian-mitre-attack/assets/32276363/5311606f-7608-4e41-b9fb-fc9978d9b806)
+![immagine](https://github.com/vincenzocaputo/obsidian-mitre-attack/assets/32276363/68edd2f7-4761-4696-9aa6-ad6c86bf153f)
+
+![immagine](https://github.com/vincenzocaputo/obsidian-mitre-attack/assets/32276363/48e99e68-4d38-45f2-8255-c88648e8a5ce)
+
+
+
