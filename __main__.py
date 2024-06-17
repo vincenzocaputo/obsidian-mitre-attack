@@ -49,7 +49,6 @@ if __name__ == '__main__':
                 print("You have not provided a valid markdown file path")
         else:
             print("Provide a file path")
-            exit()
     else:
         if args.output:
             if os.path.isdir(args.output):
