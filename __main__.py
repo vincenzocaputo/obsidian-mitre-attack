@@ -51,7 +51,10 @@ if __name__ == '__main__':
             print("Provide a file path")
     else:
         if args.output:
-            output_dir = args.output
+            if os.path.isdir(args.output):
+                output_dir = args.output
+            else:
+                print("You have not provided a valid output directory")
         else:
             exit()
 
