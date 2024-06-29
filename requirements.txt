@@ -1,9 +1,10 @@
 antlr4-python3-runtime==4.9.3
 certifi==2023.7.22
 charset-normalizer==3.1.0
+Cython==0.29.37
 idna==3.4
 pytz==2023.3
-PyYAML==6.0
+PyYAML==6.0.1
 requests==2.31.0
 simplejson==3.19.1
 six==1.16.0
