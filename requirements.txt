@@ -1,7 +1,7 @@
 antlr4-python3-runtime==4.9.3
 certifi==2023.7.22
 charset-normalizer==3.1.0
-idna==3.4
+idna==3.7
 pytz==2023.3
 PyYAML==6.0
 requests==2.31.0
