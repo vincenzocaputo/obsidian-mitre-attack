@@ -8,6 +8,7 @@ class StixParser():
     Get and parse STIX data creating Tactics and Techniques objects
     Get the ATT&CK STIX data from MITRE/CTI GitHub repository. 
     Domain should be 'enterprise-attack', 'mobile-attack', or 'ics-attack'. Branch should typically be master.
+
     """
 
     def __init__(self, repo_url, domain, version=None):
