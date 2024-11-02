@@ -26,7 +26,7 @@ if __name__ == '__main__':
         if domain not in ('enterprise-attack', 'mobile-attack', 'ics-attack'):
             raise ValueError("The domain provided is not supported")
 
-    parser = StixParser(config['repository_url'], domain)
+    parser = StixParser(config['repository_url'], domain, config.get('version'))
 
     parser.get_data()
     if args.generate_hyperlinks:
@@ -51,7 +51,10 @@ if __name__ == '__main__':
             print("Provide a file path")
     else:
         if args.output:
-            output_dir = args.output
+            if os.path.isdir(args.output):
+                output_dir = args.output
+            else:
+                print("You have not provided a valid output directory")
         else:
             exit()
 
