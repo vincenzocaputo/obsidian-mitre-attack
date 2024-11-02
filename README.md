@@ -27,6 +27,19 @@ pip install -r requirements.txt
 
 ### Run
 
+#### Edit the config file (Optional)
+
+> **It is recommended to use the default config file.**
+
+
+In the `config.yml` file, you can change the following options:
+
+- **repository_url**: The base URL pointing to the mitre/attack-stix-data repository.
+- **domain**: The MITRE ATT&CK domain to pull. It should be either "enterprise-attack", "mobile-attack", or "ics-attack". Note: Currently, only the "enterprise-attack" domain is fully tested.
+- **version**: The ATT&CK version to pull. You can remove this entry to pull the latest version.
+
+
+#### Run the script
 Run the application specifying the output directory path (i.e.: your obsidian vault)
 
 ```
