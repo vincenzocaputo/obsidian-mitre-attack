@@ -204,5 +204,12 @@ class StixParser():
                             group.software_used = {'software': software_obj}
                             software_obj.groups = {'group': group}
 
+                techniques_relationships = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', software_obj.internal_id) ])
+                for relationship in techniques_relationships:
+                    for technique in self.techniques:
+                        if technique.internal_id == relationship['target_ref']:
+                            software_obj.techniques_used = {'technique': technique, 'description': relationship.get('description', '') }
+                            technique.software = {'software': software_obj, 'description': relationship.get('description', '') }
+
                 software_obj.description = sw['description']
                 self.software.append(software_obj)

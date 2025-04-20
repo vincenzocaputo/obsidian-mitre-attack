@@ -70,6 +70,13 @@ class MarkdownGenerator():
                 for permission in technique.permissions_required:
                     content += f"- {permission}\n"
 
+                content += f"\n### Procedure Examples\n"
+                if technique.software:
+                    content += f"| ID | Name | Description |\n| --- | --- | --- |\n"
+                    for sw in technique.software:
+                        description = sw['description'].replace('\n', '<br />')
+                        content += f"| [[{sw['software'].name}\|{sw['software'].id}]] | {sw['software'].name} | {description} |\n"
+
                 content += f"\n### Mitigations\n"
                 if technique.mitigations:
                     content += f"\n| ID | Name | Description |\n| --- | --- | --- |\n"
@@ -258,6 +265,11 @@ class MarkdownGenerator():
 
 
                 content += f"### Techniques Used\n"
+                if software.techniques_used:
+                    content += f"| ID | Name | Use |\n| --- | --- | --- |\n"
+                    for tech in software.techniques_used:
+                        description = tech['description'].replace('\n', '<br />')
+                        content += f"| [[{tech['technique'].name}\|{tech['technique'].id}]] | {tech['technique'].name} | {description} |\n"
 
                 content += f"\n### Groups That Use This Software\n"
                 if software.groups:

@@ -62,6 +62,7 @@ class MITRETechnique(MITREObject):
         self._kill_chain_phases = list()
         self._mitigations = list()
         self._groups = list()
+        self._software = list()
 
     @property
     def internal_id(self):
@@ -121,6 +122,14 @@ class MITRETechnique(MITREObject):
     @groups.setter
     def groups(self, group:dict):
         self.groups.append(group)
+
+    @property
+    def software(self):
+        return self._software
+
+    @software.setter
+    def software(self, software:dict):
+        self.software.append(software)
 
 
 class MITREMitigation(MITREObject):
@@ -210,6 +219,7 @@ class MITRESoftware(MITREObject):
         MITREObject.__init__(self, name)
         self._aliases = list()
         self._groups = list()
+        self._techniques_used = list()
 
     @property
     def internal_id(self):
@@ -234,3 +244,11 @@ class MITRESoftware(MITREObject):
     @groups.setter
     def groups(self, group:dict):
         self._groups.append(group)
+
+    @property
+    def techniques_used(self):
+        return self._techniques_used
+
+    @techniques_used.setter
+    def techniques_used(self, technique_used:dict):
+        self._techniques_used.append(technique_used)
