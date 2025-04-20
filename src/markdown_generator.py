@@ -141,6 +141,13 @@ class MarkdownGenerator():
                         description = technique['description'].replace('\n', '<br />')
                         content += f"| [[{technique['technique'].name}\|{technique['technique'].id}]] | {technique['technique'].name} | {description} |\n"
 
+                content += f"### Software\n"
+
+                if group.software_used:
+                    content += f"| ID | Name |\n| --- | --- |\n"
+                    for sw in group.software_used:
+                        content += f"| [[{sw['software'].name}\|{sw['software'].id}]] | {sw['software'].name} |\n"
+
                 fd.write(content)
 
 
