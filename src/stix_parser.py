@@ -197,6 +197,12 @@ class StixParser():
                     if 'url' in ext_ref:
                         software_obj.references = {'name': ext_ref['source_name'], 'url': ext_ref['url']}
 
-                software_obj.description = sw['description']
+                group_relationships = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('target_ref', '=', software_obj.internal_id) ])
+                for relationship in group_relationships:
+                    for group in self.groups:
+                        if group.internal_id == relationship['source_ref']:
+                            group.software_used = {'software': software_obj}
+                            software_obj.groups = {'group': group}
 
+                software_obj.description = sw['description']
                 self.software.append(software_obj)

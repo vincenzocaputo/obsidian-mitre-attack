@@ -253,8 +253,10 @@ class MarkdownGenerator():
                 content += f"### Techniques Used\n"
 
                 content += f"\n### Groups That Use This Software\n"
-                for group in software.groups:
-                    content += f"- {group}\n"
+                if software.groups:
+                    content += f"| ID | Name |\n| --- | --- |\n"
+                    for group in software.groups:
+                        content += f"| [[{group['group'].name}\|{group['group'].id}]] | {group['group'].name} |\n"
 
                 content += f"\n\n---\n### References\n\n"
                 for ref in software.references.keys():

@@ -166,6 +166,7 @@ class MITREGroup(MITREObject):
         MITREObject.__init__(self, name)
         self._aliases = list()
         self._techniques_used = list()
+        self._software_used = list()
 
     @property
     def internal_id(self):
@@ -190,6 +191,15 @@ class MITREGroup(MITREObject):
     @techniques_used.setter
     def techniques_used(self, technique_used:dict):
         self._techniques_used.append(technique_used)
+
+    @property
+    def software_used(self):
+        return self._software_used
+
+    @software_used.setter
+    def software_used(self, software_used:dict):
+        self._software_used.append(software_used)
+
 
 class MITRESoftware(MITREObject):
     """
