@@ -48,28 +48,31 @@ class MarkdownGenerator():
             technique_file = os.path.join(techniques_dir, f"{technique.name}.md")
 
             with open(technique_file, 'w') as fd:
-                content = f"---\nalias: {technique.id}\n---\n\n"
-
-                content += f"## {technique.id}\n\n"
-                content += f"{technique.description}\n\n\n"
-
-
-                content += f"### Tactic\n"
+                # Generate note proprties
+                content = f"---\nalias: {technique.id}\n"
+                
+                content += "tactic:\n"
                 for kill_chain in technique.kill_chain_phases:
                     if kill_chain['kill_chain_name'] == 'mitre-attack':
                         tactic = [ t for t in self.tactics if t.name.lower().replace(' ', '-') == kill_chain['phase_name'].lower() ]
                         if tactic:
                             for t in tactic:
-                                content += f"- [[{t.name}]] ({t.id})\n" 
+                                content += f'  - "[[{t.name}]]"\n' 
 
-                content += f"\n### Platforms\n"
-                for platform in technique.platforms:
-                    content += f"- {platform}\n"
+                if technique.platforms:
+                    content += "platforms:\n"
+                    for platform in technique.platforms:
+                        content += f"  - {platform}\n"
 
-                content += f"\n### Permissions Required\n"
-                for permission in technique.permissions_required:
-                    content += f"- {permission}\n"
+                content += "permission required:\n"
+                if technique.permissions_required:
+                    for permission in technique.permissions_required:
+                        content += f"  - {permission}\n"
+                content += "---\n"
 
+                content += f"## {technique.id}\n\n"
+                content += f"{technique.description}\n\n\n"
+                
                 content += f"\n### Procedure Examples\n"
                 if technique.software:
                     content += f"| ID | Name | Description |\n| --- | --- | --- |\n"
