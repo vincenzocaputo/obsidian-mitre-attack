@@ -21,11 +21,13 @@ class MarkdownGenerator():
         self.groups = groups
         self.software = software
         self.environment = Environment(loader=FileSystemLoader(os.path.join(ROOT, "res/templates/")))
-        self.environment.filters['parse_description'] = MarkdownGenerator.parse_description
+        self.environment.filters["parse_description"] = MarkdownGenerator.parse_description
 
     @staticmethod
     def parse_description(description, references=[]):
         description = description.replace('\n', '<br/>')
+        description = description.replace('</code>', '`')
+        description = description.replace('<code>', '`')
 
         for ref in references:
             description = re.sub(fr'\(Citation: {ref["source_name"]}\)', f'[^{ref["id"]}] ', description)
@@ -77,8 +79,8 @@ class MarkdownGenerator():
 
             tactics = []
             for kill_chain in technique.kill_chain_phases:
-                if kill_chain['kill_chain_name'] == 'mitre-attack':
-                    tactics += [ t.name for t in self.tactics if t.name.lower().replace(' ', '-') == kill_chain['phase_name'].lower() ]
+                if kill_chain["kill_chain_name"] == 'mitre-attack':
+                    tactics += [ t.name for t in self.tactics if t.name.lower().replace(' ', '-') == kill_chain["phase_name"].lower() ]
 
             content = template.render(
                     aliases = [technique.id],
@@ -88,15 +90,18 @@ class MarkdownGenerator():
                     permissions_required = technique.permissions_required,
                     title = technique.id,
                     description = technique.description,
-                    procedures = [{"name": sw['software'].name,
-                                 "id": sw['software'].id,
-                                 "description": sw['description']} for sw in technique.software],
-                    mitigations = [{"name": m['mitigation'].name,
-                                 "id": m['mitigation'].id,
-                                 "description": m['description']} for m in technique.mitigations],
+                    procedures = [{"name": sw["software"].name,
+                                 "id": sw["software"].id,
+                                 "description": sw["description"]} for sw in technique.software] +
+                                 [{"name": g["group"].name,
+                                 "id": g["group"].id,
+                                 "description": g["description"]} for g in technique.groups],
+                    mitigations = [{"name": m["mitigation"].name,
+                                 "id": m["mitigation"].id,
+                                 "description": m["description"]} for m in technique.mitigations],
                     subtechniques = [ subt for subt in self.techniques if subt.is_subtechnique and technique.id in subt.id ],
-                    references = [{"id": value['id'],
-                                   "source_name": value['source_name'],
+                    references = [{"id": value["id"],
+                                   "source_name": value["source_name"],
                                    "url": url} for url, value in references.items() ]
             )
 
@@ -135,9 +140,9 @@ class MarkdownGenerator():
                     mitre_attack = mitre_attack,
                     title = mitigation.id,
                     description = mitigation.description,
-                    techniques = [{"name": t['technique'].name,
-                                   "id": t['technique'].id,
-                                   "description": t['description']} for t in mitigation.mitigates ]
+                    techniques = [{"name": t["technique"].name,
+                                   "id": t["technique"].id,
+                                   "description": t["description"]} for t in mitigation.mitigates ]
             )
             with open(mitigation_file, 'w') as fd:
                 fd.write(content)
@@ -176,7 +181,11 @@ class MarkdownGenerator():
                                    "id": t["technique"].id,
                                    "description": t["description"]} for t in group.techniques_used],
                     software = [{"name": s["software"].name,
-                                 "id": s["software"].id} for s in group.software_used]
+                                 "id": s["software"].id,
+                                 "description": s["description"]} for s in group.software_used],
+                    references = [{"id": value["id"],
+                                   "source_name": value["source_name"],
+                                   "url": url} for url, value in references.items() ]
             )
             with open(group_file, 'w') as fd:
                 fd.write(content)
@@ -207,15 +216,16 @@ class MarkdownGenerator():
             techniques_used = []
             for tech in software.techniques_used:
                 techniques_used.append({
-                    'name': tech['technique'].name,
-                    'id': tech['technique'].id,
-                    'description': tech['description']
+                    'name': tech["technique"].name,
+                    'id': tech["technique"].id,
+                    'description': tech["description"]
                 })
             groups = []
             for group in software.groups:
                 groups.append({
-                        'name': group['group'].name,
-                        'id': group['group'].id
+                        'name': group["group"].name,
+                        'id': group["group"].id,
+                        'description': group["description"]
                     })
 
             content = template.render(
@@ -225,8 +235,8 @@ class MarkdownGenerator():
                     description = software.description,
                     techniques = techniques_used,
                     groups = groups,
-                    references = [{"id": value['id'],
-                                   "source_name": value['source_name'],
+                    references = [{"id": value["id"],
+                                   "source_name": value["source_name"],
                                    "url": url} for url, value in references.items() ]
             )
             software_file = os.path.join(software_dir, f"{software.name}.md")
@@ -268,8 +278,8 @@ class MarkdownGenerator():
             if technique.id in filtered_techniques:
                 if not technique.is_subtechnique:
                     for kill_chain in technique.kill_chain_phases:
-                        if kill_chain['kill_chain_name'] == 'mitre-attack':
-                            tactic = [ t for t in self.tactics if t.name.lower().replace(' ', '-') == kill_chain['phase_name'].lower() ]
+                        if kill_chain["kill_chain_name"] == 'mitre-attack':
+                            tactic = [ t for t in self.tactics if t.name.lower().replace(' ', '-') == kill_chain["phase_name"].lower() ]
                             if tactic:
                                 if tactic[0].name in rows.keys():
                                     y = rows[tactic[0].name]
@@ -287,7 +297,7 @@ class MarkdownGenerator():
                                 "width": 450,
                                 "height": height
                             }
-                    canvas['nodes'].append(technique_node)
+                    canvas["nodes"].append(technique_node)
                     y = y + height + 20
                     subtechniques = [ subt for subt in self.techniques if subt.is_subtechnique and technique.id in subt.id ]
                     if subtechniques:
@@ -302,7 +312,7 @@ class MarkdownGenerator():
                                         "height": height
                                     }
                             y = y + height + 20
-                            canvas['nodes'].append(subtech_node)
+                            canvas["nodes"].append(subtech_node)
                     
                     rows[tactic[0].name] = y
                     if y > max_height:
@@ -318,7 +328,7 @@ class MarkdownGenerator():
                         "width": 500,
                         "height": max_height + 20
                     }
-            canvas['nodes'].append(container_node)
+            canvas["nodes"].append(container_node)
                         
             
         with open(f"{canvas_name}.canvas", 'w') as fd:

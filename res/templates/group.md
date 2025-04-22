@@ -1,8 +1,6 @@
 ---
 alias:
-    {% for alias in aliases %}
-    - {{alias}}
-    {% endfor %}
+    {% for alias in aliases %}- {{alias}}{% endfor %}
 mitre-attack: {{mitre_attack}}
 ---
 
@@ -18,9 +16,9 @@ mitre-attack: {{mitre_attack}}
 
 {% if software %}
 ### Software
-| ID | Name | Descrption |
+| ID | Name | Description |
 | --- | --- | --- |
-{% for sw in software %}| [[{{sw['name']}}\|{{sw['id']}}]] | {{sw['name']}} | {{sw['description']}} |
+{% for sw in software %}| [[{{sw['name']}}\|{{sw['id']}}]] | {{sw['name']}} | sw['description'] | parse_description(references) }} |
 {% endfor %}
 {% endif %}
 

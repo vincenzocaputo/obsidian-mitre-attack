@@ -136,6 +136,10 @@ class StixParser():
 
                 for relationship in mitigation_relationships:
                     for technique in self.techniques:
+                        refs = relationship.get('external_references', [])
+                        for ext_ref in refs:
+                            mitigation_obj.references = (ext_ref['source_name'], ext_ref['url'])
+                            technique.references = (ext_ref['source_name'], ext_ref['url'])
                         if technique.internal_id == relationship['target_ref']:
                             mitigation_obj.mitigates = {'technique': technique, 'description': relationship.get('description', '') }
                             technique.mitigations = {'mitigation': mitigation_obj, 'description': relationship.get('description', '') }
@@ -173,6 +177,10 @@ class StixParser():
                 for relationship in group_relationships:
                     for technique in self.techniques:
                         if technique.internal_id == relationship['target_ref']:
+                            refs = relationship.get('external_references', [])
+                            for ext_ref in refs:
+                                group_obj.references = (ext_ref['source_name'], ext_ref['url'])
+                                technique.references = (ext_ref['source_name'], ext_ref['url'])
                             group_obj.techniques_used = {'technique': technique, 'description': relationship.get('description', '') }
                             technique.groups = {'group': group_obj, 'description': relationship.get('description', '') }
                 group_obj.aliases = group.get('aliases', [])
@@ -210,8 +218,8 @@ class StixParser():
                 for relationship in group_relationships:
                     for group in self.groups:
                         if group.internal_id == relationship['source_ref']:
-                            group.software_used = {'software': software_obj}
-                            software_obj.groups = {'group': group}
+                            group.software_used = {'software': software_obj, 'description': relationship.get('description', '')}
+                            software_obj.groups = {'group': group, 'description': relationship.get('description', '')}
 
                 techniques_relationships = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', software_obj.internal_id) ])
                 for relationship in techniques_relationships:

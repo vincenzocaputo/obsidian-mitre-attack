@@ -1,25 +1,15 @@
 ---
 alias:
-    {% for alias in aliases %}
-    - {{alias}}
-    {% endfor %}
+    {% for alias in aliases %} - {{alias}}{% endfor %}
 mitre-attack: {{mitre_attack}}
 tactic: 
-    {% for tactic in tactics %}
-    - {{tactic}}
-    {% endfor %}
+    {% for tactic in tactics %} - {{tactic}}{% endfor %}
 platforms:
-    {% for plat in platforms %}
-    - {{plat}}
-    {% endfor %}
+    {% for plat in platforms %} - {{plat}}{% endfor %}
 permissions required:
     {% if permissions_required %}
-    {% for perm in permissions_required %}
-    - {{perm}}
-    {% endfor %}
-    {% else %}
-    - none
-    {% endif %}
+    {% for perm in permissions_required %} - {{perm}}{% endfor %}
+    {% else %} - none{% endif %}
 ---
 
 ## {{title}}
@@ -38,7 +28,7 @@ permissions required:
 ### Mitigations
 | ID | Name | Descrption |
 | --- | --- | --- |
-{% for mit in mitigations %}| [[{{mit['name']}}\|{{mit['id']}}]] | {{mit['name']}} | {{mit['description']}} |
+{% for mit in mitigations %}| [[{{mit['name']}}\|{{mit['id']}}]] | {{mit['name']}} | {{mit['description'] | parse_description(references)}} |
 {% endfor %}
 {% endif %}
 
