@@ -68,6 +68,8 @@ class MarkdownGenerator():
                 if technique.permissions_required:
                     for permission in technique.permissions_required:
                         content += f"  - {permission}\n"
+                else:
+                    content += f"  - {none}\n"
                 content += "---\n"
 
                 content += f"## {technique.id}\n\n"
