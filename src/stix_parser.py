@@ -1,3 +1,4 @@
+from loguru import logger
 from stix2 import Filter
 from stix2 import MemoryStore
 import requests
@@ -28,10 +29,15 @@ class StixParser():
 
     
     def get_data(self):
+        logger.info("Extracting Tactics...")
         self._get_tactics()
+        logger.info("Extracting Techniques...")
         self._get_techniques()
+        logger.info("Extracting Mitigations...")
         self._get_mitigations()
+        logger.info("Extracting Groups...")
         self._get_groups()
+        logger.info("Extracting Software...")
         self._get_software()
 
 

@@ -2,12 +2,19 @@ from src.stix_parser import StixParser
 from src.markdown_generator import MarkdownGenerator
 from src.view import create_graph_json
 from src.markdown_reader import MarkdownReader
+
+from loguru import logger
+
 import argparse
 import os
+import sys
 import yaml
 import re
 
 if __name__ == '__main__':
+    logger.remove()
+    logger.add(sys.stdout, colorize=True, format="[<level>{level}</level>] - {message}")
+
     parser = argparse.ArgumentParser(description='Downdload MITRE ATT&CK STIX data and parse it to Obsidian markdown notes')
 
     parser.add_argument('-d', '--domain', help="Domain should be 'enterprise-attack', 'mobile-attack' or 'ics-attack'", default='enterprise-attack')
@@ -24,10 +31,13 @@ if __name__ == '__main__':
     if args.domain:
         domain = args.domain
         if domain not in ('enterprise-attack', 'mobile-attack', 'ics-attack'):
-            raise ValueError("The domain provided is not supported")
+            log.error(f"The domain {domain} is not suported")
+            exit(-1)
 
+    logger.info(f"Downloading STIX data. Domain: {domain} Version: {config.get('version') or 'latest'}")
     parser = StixParser(config['repository_url'], domain, config.get('version'))
 
+    logger.info("Extracting objects from STIX data")
     parser.get_data()
     if args.generate_hyperlinks:
         if args.path:
@@ -35,9 +45,9 @@ if __name__ == '__main__':
                 markdown_reader = MarkdownReader(args.path)
                 markdown_reader.create_hyperlinks(parser.techniques)
             else:
-                print("You have not provided a valid markdown file path")
+                logger.error("You have not provided a valid markdown file path")
         else:
-            print("Provide a file path")
+            logger.error("Provide a file path")
     elif args.generate_matrix:
         if args.path:
             if os.path.isfile(args.path) and args.path.endswith('.md'):
@@ -46,25 +56,30 @@ if __name__ == '__main__':
                 markdown_generator = MarkdownGenerator(tactics=parser.tactics, techniques=parser.techniques, mitigations=parser.mitigations, groups=parser.groups, software=parser.software)
                 markdown_generator.create_canvas(re.sub('.md$',"",args.path), found_techniques)
             else:
-                print("You have not provided a valid markdown file path")
+                logger.error("You have not provided a valid markdown file path")
         else:
-            print("Provide a file path")
+            logger.error("Provide a file path")
     else:
         if args.output:
             if os.path.isdir(args.output):
                 output_dir = args.output
             else:
-                print("You have not provided a valid output directory")
+                logger.error("You have not provided a valid output directory")
         else:
             exit()
 
         os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
         markdown_generator = MarkdownGenerator(output_dir, parser.tactics, parser.techniques, parser.mitigations, parser.groups, parser.software)
+        logger.info("Creating Tactic notes")
         markdown_generator.create_tactic_notes()
+        logger.info("Creating Technique notes")
         markdown_generator.create_technique_notes()
+        logger.info("Creating Mitigation notes")
         markdown_generator.create_mitigation_notes()
+        logger.info("Creating Group notes")
         markdown_generator.create_group_notes()
+        logger.info("Creating Software notes")
         markdown_generator.create_software_notes()
 
         
