@@ -1,3 +1,4 @@
+from jinja2 import Environment, FileSystemLoader
 from stix2 import Filter
 from stix2 import MemoryStore
 from pathlib import Path
@@ -7,6 +8,7 @@ import requests
 import os
 import json
 import uuid
+import re
 
 class MarkdownGenerator():
 
@@ -18,94 +20,95 @@ class MarkdownGenerator():
         self.mitigations = mitigations
         self.groups = groups
         self.software = software
+        self.environment = Environment(loader=FileSystemLoader(os.path.join(ROOT, "res/templates/")))
+        self.environment.filters['parse_description'] = MarkdownGenerator.parse_description
 
+    @staticmethod
+    def parse_description(description, references=[]):
+        description = description.replace('\n', '<br/>')
+
+        for ref in references:
+            description = re.sub(fr'\(Citation: {ref["source_name"]}\)', f'[^{ref["id"]}] ', description)
+        return description
 
     def create_tactic_notes(self):
+        template = self.environment.get_template("tactic.md")
         tactics_dir = os.path.join(self.output_dir, "tactics")
         if not os.path.exists(tactics_dir):
             os.mkdir(tactics_dir)
 
         for tactic in self.tactics:
+            for ref in tactic.references:
+                if ref[0] == 'mitre-attack':
+                    mitre_attack = ref[1]
+
+            content = template.render(
+                    aliases = [tactic.id],
+                    mitre_attack = mitre_attack,
+                    title = tactic.id,
+                    description = tactic.description
+            )
             tactic_file = os.path.join(tactics_dir, f"{tactic.name}.md")
 
             with open(tactic_file, 'w') as fd:
-                content = f"---\nalias: {tactic.id}\n---"
-                content += f"\n\n## {tactic.id}\n"
-                content += f"\n{tactic.description}\n\n---\n"
-                
-                content += f"### References\n"
-                for ref in tactic.references.keys():
-                    content += f"- {ref}: {tactic.references[ref]}\n"
                 fd.write(content)
 
 
     def create_technique_notes(self):
+        template = self.environment.get_template("technique.md")
         techniques_dir = os.path.join(self.output_dir, "techniques")
         if not os.path.exists(techniques_dir):
             os.mkdir(techniques_dir)
 
         for technique in self.techniques:
+            footnote_id = 1
+            references = {}
+            for ref in technique.references:
+                if ref[0] == 'mitre-attack':
+                    mitre_attack = ref[1]
+                    pass
+                ref_url = ref[1]
+                if ref_url not in references:
+                    references[ref_url] = {
+                        'id': footnote_id,
+                        'source_name': ref[0]
+                    }
+                    footnote_id += 1
+
+            tactics = []
+            for kill_chain in technique.kill_chain_phases:
+                if kill_chain['kill_chain_name'] == 'mitre-attack':
+                    tactics += [ t.name for t in self.tactics if t.name.lower().replace(' ', '-') == kill_chain['phase_name'].lower() ]
+
+            content = template.render(
+                    aliases = [technique.id],
+                    mitre_attack = mitre_attack,
+                    tactics = tactics,
+                    platforms = technique.platforms,
+                    permissions_required = technique.permissions_required,
+                    title = technique.id,
+                    description = technique.description,
+                    procedures = [{"name": sw['software'].name,
+                                 "id": sw['software'].id,
+                                 "description": sw['description']} for sw in technique.software],
+                    mitigations = [{"name": m['mitigation'].name,
+                                 "id": m['mitigation'].id,
+                                 "description": m['description']} for m in technique.mitigations],
+                    subtechniques = [ subt for subt in self.techniques if subt.is_subtechnique and technique.id in subt.id ],
+                    references = [{"id": value['id'],
+                                   "source_name": value['source_name'],
+                                   "url": url} for url, value in references.items() ]
+            )
+
             technique_file = os.path.join(techniques_dir, f"{technique.name}.md")
 
             with open(technique_file, 'w') as fd:
-                # Generate note proprties
-                content = f"---\nalias: {technique.id}\n"
-                
-                content += "tactic:\n"
-                for kill_chain in technique.kill_chain_phases:
-                    if kill_chain['kill_chain_name'] == 'mitre-attack':
-                        tactic = [ t for t in self.tactics if t.name.lower().replace(' ', '-') == kill_chain['phase_name'].lower() ]
-                        if tactic:
-                            for t in tactic:
-                                content += f'  - "[[{t.name}]]"\n' 
-
-                if technique.platforms:
-                    content += "platforms:\n"
-                    for platform in technique.platforms:
-                        content += f"  - {platform}\n"
-
-                content += "permission required:\n"
-                if technique.permissions_required:
-                    for permission in technique.permissions_required:
-                        content += f"  - {permission}\n"
-                else:
-                    content += f"  - none\n"
-                content += "---\n"
-
-                content += f"## {technique.id}\n\n"
-                content += f"{technique.description}\n\n\n"
-                
-                content += f"\n### Procedure Examples\n"
-                if technique.software:
-                    content += f"| ID | Name | Description |\n| --- | --- | --- |\n"
-                    for sw in technique.software:
-                        description = sw['description'].replace('\n', '<br />')
-                        content += f"| [[{sw['software'].name}\\|{sw['software'].id}]] | {sw['software'].name} | {description} |\n"
-
-                content += f"\n### Mitigations\n"
-                if technique.mitigations:
-                    content += f"\n| ID | Name | Description |\n| --- | --- | --- |\n"
-                    for mitigation in technique.mitigations:
-                        description = mitigation['description'].replace('\n', '<br />')
-                        content += f"| [[{mitigation['mitigation'].name}\\|{mitigation['mitigation'].id}]] | {mitigation['mitigation'].name} | {description} |\n"
-
-                if not technique.is_subtechnique:
-                    content += f"\n### Sub-techniques\n"
-                    subtechniques = [ subt for subt in self.techniques if subt.is_subtechnique and technique.id in subt.id ]
-                    if subtechniques:
-                        content += f"\n| ID | Name |\n| --- | --- |\n"
-                    for subt in subtechniques:
-                        content += f"| [[{subt.name}\\|{subt.id}]] | {subt.name} |\n"
-
-
-                content += f"\n\n---\n### References\n\n"
-                for ref in technique.references.keys():
-                    content += f"- {ref}: {technique.references[ref]}\n"
-
                 fd.write(content)
 
 
     def create_mitigation_notes(self):
+        template = self.environment.get_template("mitigation.md")
+        
         mitigations_dir = os.path.join(self.output_dir, "mitigations")
         if not os.path.exists(mitigations_dir):
             os.mkdir(mitigations_dir)
@@ -113,25 +116,36 @@ class MarkdownGenerator():
         for mitigation in self.mitigations:
             mitigation_file = os.path.join(mitigations_dir, f"{mitigation.name}.md")
 
+            footnote_id = 1
+            references = {}
+            for ref in mitigation.references:
+                if ref[0] == 'mitre-attack':
+                    mitre_attack = ref[1]
+                    pass
+                ref_url = ref[1]
+                if ref_url not in references:
+                    references[ref_url] = {
+                            'id': footnote_id,
+                            'source_name': ref[0]
+                    }
+                    footnote_id += 1
+
+            content = template.render(
+                    aliases = [mitigation.id],
+                    mitre_attack = mitre_attack,
+                    title = mitigation.id,
+                    description = mitigation.description,
+                    techniques = [{"name": t['technique'].name,
+                                   "id": t['technique'].id,
+                                   "description": t['description']} for t in mitigation.mitigates ]
+            )
             with open(mitigation_file, 'w') as fd:
-                content = f"---\nalias: {mitigation.id}\n---\n\n"
-
-                content += f"## {mitigation.id}\n\n"
-                content += f"{mitigation.description}\n\n\n"
-
-
-                content += f"### Techniques Addressed by Mitigation\n"
-                if mitigation.mitigates:
-                    content += f"\n| ID | Name | Description |\n| --- | --- | --- |\n"
-                    for technique in mitigation.mitigates:
-                        description = technique['description'].replace('\n', '<br />')
-                        content += f"| [[{technique['technique'].name}\\|{technique['technique'].id}]] | {technique['technique'].name} | {description} |\n"
-
-
                 fd.write(content)
 
 
     def create_group_notes(self):
+        template = self.environment.get_template("group.md")
+
         groups_dir = os.path.join(self.output_dir, "groups")
         if not os.path.exists(groups_dir):
             os.mkdir(groups_dir)
@@ -139,29 +153,86 @@ class MarkdownGenerator():
         for group in self.groups:
             group_file = os.path.join(groups_dir, f"{group.name}.md")
 
+            footnote_id = 1
+            references = {}
+            for ref in group.references:
+                if ref[0] == 'mitre-attack':
+                    mitre_attack = ref[1]
+                    pass
+                ref_url = ref[1]
+                if ref_url not in references:
+                    references[ref_url] = {
+                            'id': footnote_id,
+                            'source_name': ref[0]
+                    }
+                    footnote_id += 1
+
+            content = template.render(
+                    aliases = group.aliases,
+                    mitre_attack = mitre_attack,
+                    title = group.id,
+                    description = group.description,
+                    techniques = [{"name": t["technique"].name,
+                                   "id": t["technique"].id,
+                                   "description": t["description"]} for t in group.techniques_used],
+                    software = [{"name": s["software"].name,
+                                 "id": s["software"].id} for s in group.software_used]
+            )
             with open(group_file, 'w') as fd:
-                content = f"---\nalias: {', '.join(group.aliases)}\n---\n\n"
-
-                content += f"## {group.id}\n\n"
-                content += f"{group.description}\n\n\n"
-
-                content += f"### Techniques Used\n"
-
-                if group.techniques_used:
-                    content += f"\n| ID | Name | Use |\n| --- | --- | --- |\n"
-                    for technique in group.techniques_used:
-                        description = technique['description'].replace('\n', '<br />')
-                        content += f"| [[{technique['technique'].name}\\|{technique['technique'].id}]] | {technique['technique'].name} | {description} |\n"
-
-                content += f"### Software\n"
-
-                if group.software_used:
-                    content += f"| ID | Name |\n| --- | --- |\n"
-                    for sw in group.software_used:
-                        content += f"| [[{sw['software'].name}\\|{sw['software'].id}]] | {sw['software'].name} |\n"
-
                 fd.write(content)
 
+    def create_software_notes(self):
+        template = self.environment.get_template("software.md")
+
+        software_dir = os.path.join(self.output_dir, "software")
+        if not os.path.exists(software_dir):
+            os.mkdir(software_dir)
+
+
+        for software in self.software:
+            footnote_id = 1
+            references = {}
+            for ref in software.references:
+                if ref[0] == 'mitre-attack':
+                    mitre_attack = ref[1]
+                    pass
+                ref_url = ref[1]
+                if ref_url not in references:
+                    references[ref_url] = {
+                            'id': footnote_id,
+                            'source_name': ref[0]
+                    }
+                    footnote_id += 1
+
+            techniques_used = []
+            for tech in software.techniques_used:
+                techniques_used.append({
+                    'name': tech['technique'].name,
+                    'id': tech['technique'].id,
+                    'description': tech['description']
+                })
+            groups = []
+            for group in software.groups:
+                groups.append({
+                        'name': group['group'].name,
+                        'id': group['group'].id
+                    })
+
+            content = template.render(
+                    aliases = [software.id],
+                    mitre_attack = mitre_attack,
+                    title = software.id,
+                    description = software.description,
+                    techniques = techniques_used,
+                    groups = groups,
+                    references = [{"id": value['id'],
+                                   "source_name": value['source_name'],
+                                   "url": url} for url, value in references.items() ]
+            )
+            software_file = os.path.join(software_dir, f"{software.name}.md")
+
+            with open(software_file, 'w') as fd:
+                fd.write(content)
 
     def create_canvas(self, canvas_name, filtered_techniques):
         canvas = {
@@ -254,36 +325,3 @@ class MarkdownGenerator():
             fd.write(json.dumps(canvas, indent=2))
             
 
-    def create_software_notes(self):
-        software_dir = os.path.join(self.output_dir, "software")
-        if not os.path.exists(software_dir):
-            os.mkdir(software_dir)
-
-        for software in self.software:
-            software_file = os.path.join(software_dir, f"{software.name}.md")
-
-            with open(software_file, 'w') as fd:
-                content = f"---\nalias: {software.id}\n---\n\n"
-
-                content += f"## {software.id}\n\n"
-                content += f"{software.description}\n\n\n"
-
-
-                content += f"### Techniques Used\n"
-                if software.techniques_used:
-                    content += f"| ID | Name | Use |\n| --- | --- | --- |\n"
-                    for tech in software.techniques_used:
-                        description = tech['description'].replace('\n', '<br />')
-                        content += f"| [[{tech['technique'].name}\\|{tech['technique'].id}]] | {tech['technique'].name} | {description} |\n"
-
-                content += f"\n### Groups That Use This Software\n"
-                if software.groups:
-                    content += f"| ID | Name |\n| --- | --- |\n"
-                    for group in software.groups:
-                        content += f"| [[{group['group'].name}\\|{group['group'].id}]] | {group['group'].name} |\n"
-
-                content += f"\n\n---\n### References\n\n"
-                for ref in software.references.keys():
-                    content += f"- {ref}: {software.references[ref]}\n"
-
-                fd.write(content)
