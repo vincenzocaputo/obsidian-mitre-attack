@@ -80,14 +80,14 @@ class MarkdownGenerator():
                     content += f"| ID | Name | Description |\n| --- | --- | --- |\n"
                     for sw in technique.software:
                         description = sw['description'].replace('\n', '<br />')
-                        content += f"| [[{sw['software'].name}\|{sw['software'].id}]] | {sw['software'].name} | {description} |\n"
+                        content += f"| [[{sw['software'].name}\\|{sw['software'].id}]] | {sw['software'].name} | {description} |\n"
 
                 content += f"\n### Mitigations\n"
                 if technique.mitigations:
                     content += f"\n| ID | Name | Description |\n| --- | --- | --- |\n"
                     for mitigation in technique.mitigations:
                         description = mitigation['description'].replace('\n', '<br />')
-                        content += f"| [[{mitigation['mitigation'].name}\|{mitigation['mitigation'].id}]] | {mitigation['mitigation'].name} | {description} |\n"
+                        content += f"| [[{mitigation['mitigation'].name}\\|{mitigation['mitigation'].id}]] | {mitigation['mitigation'].name} | {description} |\n"
 
                 if not technique.is_subtechnique:
                     content += f"\n### Sub-techniques\n"
@@ -95,7 +95,7 @@ class MarkdownGenerator():
                     if subtechniques:
                         content += f"\n| ID | Name |\n| --- | --- |\n"
                     for subt in subtechniques:
-                        content += f"| [[{subt.name}\|{subt.id}]] | {subt.name} |\n"
+                        content += f"| [[{subt.name}\\|{subt.id}]] | {subt.name} |\n"
 
 
                 content += f"\n\n---\n### References\n\n"
@@ -125,7 +125,7 @@ class MarkdownGenerator():
                     content += f"\n| ID | Name | Description |\n| --- | --- | --- |\n"
                     for technique in mitigation.mitigates:
                         description = technique['description'].replace('\n', '<br />')
-                        content += f"| [[{technique['technique'].name}\|{technique['technique'].id}]] | {technique['technique'].name} | {description} |\n"
+                        content += f"| [[{technique['technique'].name}\\|{technique['technique'].id}]] | {technique['technique'].name} | {description} |\n"
 
 
                 fd.write(content)
@@ -151,14 +151,14 @@ class MarkdownGenerator():
                     content += f"\n| ID | Name | Use |\n| --- | --- | --- |\n"
                     for technique in group.techniques_used:
                         description = technique['description'].replace('\n', '<br />')
-                        content += f"| [[{technique['technique'].name}\|{technique['technique'].id}]] | {technique['technique'].name} | {description} |\n"
+                        content += f"| [[{technique['technique'].name}\\|{technique['technique'].id}]] | {technique['technique'].name} | {description} |\n"
 
                 content += f"### Software\n"
 
                 if group.software_used:
                     content += f"| ID | Name |\n| --- | --- |\n"
                     for sw in group.software_used:
-                        content += f"| [[{sw['software'].name}\|{sw['software'].id}]] | {sw['software'].name} |\n"
+                        content += f"| [[{sw['software'].name}\\|{sw['software'].id}]] | {sw['software'].name} |\n"
 
                 fd.write(content)
 
@@ -274,13 +274,13 @@ class MarkdownGenerator():
                     content += f"| ID | Name | Use |\n| --- | --- | --- |\n"
                     for tech in software.techniques_used:
                         description = tech['description'].replace('\n', '<br />')
-                        content += f"| [[{tech['technique'].name}\|{tech['technique'].id}]] | {tech['technique'].name} | {description} |\n"
+                        content += f"| [[{tech['technique'].name}\\|{tech['technique'].id}]] | {tech['technique'].name} | {description} |\n"
 
                 content += f"\n### Groups That Use This Software\n"
                 if software.groups:
                     content += f"| ID | Name |\n| --- | --- |\n"
                     for group in software.groups:
-                        content += f"| [[{group['group'].name}\|{group['group'].id}]] | {group['group'].name} |\n"
+                        content += f"| [[{group['group'].name}\\|{group['group'].id}]] | {group['group'].name} |\n"
 
                 content += f"\n\n---\n### References\n\n"
                 for ref in software.references.keys():

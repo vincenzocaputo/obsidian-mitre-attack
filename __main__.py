@@ -13,7 +13,7 @@ import re
 
 if __name__ == '__main__':
     logger.remove()
-    logger.add(sys.stdout, colorize=True, format="[<level>{level}</level>] - {message}")
+    logger.add(sys.stdout, colorize=True, format="[<level>{level}</level>] - <level>{message}</level>")
 
     parser = argparse.ArgumentParser(description='Downdload MITRE ATT&CK STIX data and parse it to Obsidian markdown notes')
 
@@ -31,7 +31,7 @@ if __name__ == '__main__':
     if args.domain:
         domain = args.domain
         if domain not in ('enterprise-attack', 'mobile-attack', 'ics-attack'):
-            log.error(f"The domain {domain} is not suported")
+            logger.error(f"The domain {domain} is not suported")
             exit(-1)
 
     logger.info(f"Downloading STIX data. Domain: {domain} Version: {config.get('version') or 'latest'}")
