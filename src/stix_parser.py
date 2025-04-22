@@ -1,4 +1,5 @@
 from loguru import logger
+from tqdm import tqdm
 from stix2 import Filter
 from stix2 import MemoryStore
 import requests
@@ -51,7 +52,7 @@ class StixParser():
 
         self.tactics = list()
 
-        for tactic in tactics_stix:
+        for tactic in tqdm(tactics_stix):
             tactic_obj = MITRETactic(tactic['name'])
             # Extract external references, including the link to mitre
             ext_refs = tactic.get('external_references', [])
@@ -76,7 +77,7 @@ class StixParser():
 
         self.techniques = list()
 
-        for tech in tech_stix:
+        for tech in tqdm(tech_stix):
             if 'x_mitre_deprecated' not in tech or not tech['x_mitre_deprecated']:
                 technique_obj = MITRETechnique(tech['name'])
 
@@ -116,7 +117,7 @@ class StixParser():
 
         self.mitigations = list()
 
-        for mitigation in mitigations_stix:
+        for mitigation in tqdm(mitigations_stix):
             if not mitigation.get('x_mitre_deprecated', False): 
                 mitigation_obj = MITREMitigation(mitigation['name'])
                 
@@ -149,7 +150,7 @@ class StixParser():
 
         self.groups = list()
 
-        for group in groups_stix:
+        for group in tqdm(groups_stix):
             if group.get('x_mitre_deprecated', False) != 'true':
                 group_obj = MITREGroup(group['name'])
 
@@ -187,7 +188,7 @@ class StixParser():
 
         self.software = list()
 
-        for sw in software_stix:
+        for sw in tqdm(software_stix):
             if 'x_mitre_deprecated' not in sw or not sw['x_mitre_deprecated']:
                 software_obj = MITRESoftware(sw['name'])
 
