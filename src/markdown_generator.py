@@ -142,7 +142,10 @@ class MarkdownGenerator():
                     description = mitigation.description,
                     techniques = [{"name": t["technique"].name,
                                    "id": t["technique"].id,
-                                   "description": t["description"]} for t in mitigation.mitigates ]
+                                   "description": t["description"]} for t in mitigation.mitigates ],
+                    references = [{"id": value["id"],
+                                   "source_name": value["source_name"],
+                                   "url": url} for url, value in references.items() ]
             )
             with open(mitigation_file, 'w') as fd:
                 fd.write(content)
