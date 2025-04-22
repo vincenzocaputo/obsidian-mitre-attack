@@ -25,7 +25,7 @@ class MarkdownGenerator():
 
     @staticmethod
     def parse_description(description, references=[]):
-        description = description.replace('\n', '<br/>')
+        description = description.replace('\n', '<br>')
         description = description.replace('</code>', '`')
         description = description.replace('<code>', '`')
 
