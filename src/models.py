@@ -6,7 +6,7 @@ class MITREObject():
 
     def __init__(self, name):
         self._name = name.replace('/', '／')
-        self._references = dict()
+        self._references = set()
 
     @property
     def name(self):
@@ -37,11 +37,11 @@ class MITREObject():
         return self._references
 
     @references.setter
-    def references(self, reference:dict):
-        if 'name' not in reference or 'url' not in reference:
+    def references(self, reference:tuple):
+        if len(reference) != 2:
             raise ValueError("The parameter provided is not supported")
 
-        self._references[reference['name']] = reference['url']
+        self._references.add(reference)
 
 class MITRETactic(MITREObject):
     """

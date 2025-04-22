@@ -61,7 +61,7 @@ class StixParser():
                 if ext_ref['source_name'] == 'mitre-attack':
                     tactic_obj.id = ext_ref['external_id']
                 
-                tactic_obj.references = {'name': ext_ref['source_name'], 'url': ext_ref['url']}
+                tactic_obj.references = (ext_ref['source_name'], ext_ref['url'])
 
             tactic_obj.description = tactic['description']
 
@@ -91,7 +91,7 @@ class StixParser():
                         technique_obj.id = ext_ref['external_id']
                         
                     if 'url' in ext_ref:
-                        technique_obj.references = {'name': ext_ref['source_name'], 'url': ext_ref['url']}
+                        technique_obj.references = (ext_ref['source_name'], ext_ref['url'])
 
                 kill_chain = tech.get('kill_chain_phases', [])
 
@@ -129,11 +129,17 @@ class StixParser():
                 for ext_ref in ext_refs:
                     if ext_ref['source_name'] == 'mitre-attack':
                         mitigation_obj.id = ext_ref['external_id']
+                    if 'url' in ext_ref:
+                        mitigation_obj.references = (ext_ref['source_name'], ext_ref['url'])
                         
                 mitigation_relationships = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'mitigates'), Filter('source_ref', '=', mitigation_obj.internal_id) ])
 
                 for relationship in mitigation_relationships:
                     for technique in self.techniques:
+                        refs = relationship.get('external_references', [])
+                        for ext_ref in refs:
+                            mitigation_obj.references = (ext_ref['source_name'], ext_ref['url'])
+                            technique.references = (ext_ref['source_name'], ext_ref['url'])
                         if technique.internal_id == relationship['target_ref']:
                             mitigation_obj.mitigates = {'technique': technique, 'description': relationship.get('description', '') }
                             technique.mitigations = {'mitigation': mitigation_obj, 'description': relationship.get('description', '') }
@@ -158,19 +164,23 @@ class StixParser():
 
                 # Extract external references, including the link to mitre
                 ext_refs = group.get('external_references', [])
-
+                
                 for ext_ref in ext_refs:
                     if ext_ref['source_name'] == 'mitre-attack':
                         group_obj.id = ext_ref['external_id']
                         
                     if 'url' in ext_ref:
-                        group_obj.references = {'name': ext_ref['source_name'], 'url': ext_ref['url']}
+                        group_obj.references = (ext_ref['source_name'], ext_ref['url'])
 
                 group_relationships = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', group_obj.internal_id) ])
 
                 for relationship in group_relationships:
                     for technique in self.techniques:
                         if technique.internal_id == relationship['target_ref']:
+                            refs = relationship.get('external_references', [])
+                            for ext_ref in refs:
+                                group_obj.references = (ext_ref['source_name'], ext_ref['url'])
+                                technique.references = (ext_ref['source_name'], ext_ref['url'])
                             group_obj.techniques_used = {'technique': technique, 'description': relationship.get('description', '') }
                             technique.groups = {'group': group_obj, 'description': relationship.get('description', '') }
                 group_obj.aliases = group.get('aliases', [])
@@ -202,21 +212,25 @@ class StixParser():
                         software_obj.id = ext_ref['external_id']
                         
                     if 'url' in ext_ref:
-                        software_obj.references = {'name': ext_ref['source_name'], 'url': ext_ref['url']}
+                        software_obj.references = (ext_ref['source_name'], ext_ref['url'])
 
                 group_relationships = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('target_ref', '=', software_obj.internal_id) ])
                 for relationship in group_relationships:
                     for group in self.groups:
                         if group.internal_id == relationship['source_ref']:
-                            group.software_used = {'software': software_obj}
-                            software_obj.groups = {'group': group}
+                            group.software_used = {'software': software_obj, 'description': relationship.get('description', '')}
+                            software_obj.groups = {'group': group, 'description': relationship.get('description', '')}
 
                 techniques_relationships = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', software_obj.internal_id) ])
                 for relationship in techniques_relationships:
                     for technique in self.techniques:
                         if technique.internal_id == relationship['target_ref']:
-                            software_obj.techniques_used = {'technique': technique, 'description': relationship.get('description', '') }
-                            technique.software = {'software': software_obj, 'description': relationship.get('description', '') }
+                            refs = relationship.get('external_references', [])
+                            for ext_ref in refs:
+                                software_obj.references = (ext_ref['source_name'], ext_ref['url'])
+                                technique.references = (ext_ref['source_name'], ext_ref['url'])
+                            software_obj.techniques_used = {'technique': technique, 'description': relationship.get('description', '')}
+                            technique.software = {'software': software_obj, 'description': relationship.get('description', '')}
 
                 software_obj.description = sw['description']
                 self.software.append(software_obj)

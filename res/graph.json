@@ -36,7 +36,7 @@
       }
     },
     {
-      "query": "",
+      "query": "path:software",
       "color": {
         "a": 1,
         "rgb": 5431473

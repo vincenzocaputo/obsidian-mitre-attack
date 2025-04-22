@@ -1,4 +1,4 @@
 repository_url: https://raw.githubusercontent.com/mitre-attack/attack-stix-data/master
 domain: enterprise-attack
-version: 15.1
+version: 16.1
 output_dir: output
