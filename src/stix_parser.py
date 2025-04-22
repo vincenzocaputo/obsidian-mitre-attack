@@ -177,7 +177,7 @@ class StixParser():
         """
 
         # Extract software (tools, malware)
-        software_stix = self.src.query([ Filter('type', '=', 'tool') ])
+        software_stix = self.src.query([ Filter('type', '=', 'tool') ]) + self.src.query([ Filter('type', '=', 'malware') ])
 
         self.software = list()
 
