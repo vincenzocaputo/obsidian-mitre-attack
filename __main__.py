@@ -43,7 +43,7 @@ if __name__ == '__main__':
             if os.path.isfile(args.path) and args.path.endswith('.md'):
                 markdown_reader = MarkdownReader(args.path)
                 found_techniques = markdown_reader.find_techniques()
-                markdown_generator = MarkdownGenerator(tactics=parser.tactics, techniques=parser.techniques, mitigations=parser.mitigations, groups=parser.groups)
+                markdown_generator = MarkdownGenerator(tactics=parser.tactics, techniques=parser.techniques, mitigations=parser.mitigations, groups=parser.groups, software=parser.software)
                 markdown_generator.create_canvas(re.sub('.md$',"",args.path), found_techniques)
             else:
                 print("You have not provided a valid markdown file path")
@@ -60,11 +60,12 @@ if __name__ == '__main__':
 
         os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-        markdown_generator = MarkdownGenerator(output_dir, parser.tactics, parser.techniques, parser.mitigations, parser.groups)
+        markdown_generator = MarkdownGenerator(output_dir, parser.tactics, parser.techniques, parser.mitigations, parser.groups, parser.software)
         markdown_generator.create_tactic_notes()
         markdown_generator.create_technique_notes()
         markdown_generator.create_mitigation_notes()
         markdown_generator.create_group_notes()
+        markdown_generator.create_software_notes()
 
         
         create_graph_json(output_dir)

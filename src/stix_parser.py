@@ -1,7 +1,11 @@
 from stix2 import Filter
 from stix2 import MemoryStore
 import requests
-from .models import MITRETactic, MITRETechnique, MITREMitigation, MITREGroup
+from .models import (MITRETactic,
+                     MITRETechnique,
+                     MITREMitigation,
+                     MITREGroup,
+                     MITRESoftware)
 
 class StixParser():
     """
@@ -28,6 +32,7 @@ class StixParser():
         self._get_techniques()
         self._get_mitigations()
         self._get_groups()
+        self._get_software()
 
 
     def _get_tactics(self):
@@ -165,3 +170,46 @@ class StixParser():
                 group_obj.description = group.get('description', '')
 
                 self.groups.append(group_obj)
+
+    def _get_software(self):
+        """
+        Get and parse software objects from STIX data
+        """
+
+        # Extract software (tools, malware)
+        software_stix = self.src.query([ Filter('type', '=', 'tool') ])
+
+        self.software = list()
+
+        for sw in software_stix:
+            if 'x_mitre_deprecated' not in sw or not sw['x_mitre_deprecated']:
+                software_obj = MITRESoftware(sw['name'])
+
+                software_obj.internal_id = sw['id']
+
+                # Extract external references, including the link to mitre
+                ext_refs = sw.get('external_references', [])
+
+                for ext_ref in ext_refs:
+                    if ext_ref['source_name'] == 'mitre-attack':
+                        software_obj.id = ext_ref['external_id']
+                        
+                    if 'url' in ext_ref:
+                        software_obj.references = {'name': ext_ref['source_name'], 'url': ext_ref['url']}
+
+                group_relationships = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('target_ref', '=', software_obj.internal_id) ])
+                for relationship in group_relationships:
+                    for group in self.groups:
+                        if group.internal_id == relationship['source_ref']:
+                            group.software_used = {'software': software_obj}
+                            software_obj.groups = {'group': group}
+
+                techniques_relationships = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', software_obj.internal_id) ])
+                for relationship in techniques_relationships:
+                    for technique in self.techniques:
+                        if technique.internal_id == relationship['target_ref']:
+                            software_obj.techniques_used = {'technique': technique, 'description': relationship.get('description', '') }
+                            technique.software = {'software': software_obj, 'description': relationship.get('description', '') }
+
+                software_obj.description = sw['description']
+                self.software.append(software_obj)

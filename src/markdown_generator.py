@@ -10,13 +10,14 @@ import uuid
 
 class MarkdownGenerator():
 
-    def __init__(self, output_dir=None, tactics=[], techniques=[], mitigations=[], groups=[]):
+    def __init__(self, output_dir=None, tactics=[], techniques=[], mitigations=[], groups=[], software=[]):
         if output_dir:
             self.output_dir = os.path.join(ROOT, output_dir)
         self.tactics = tactics
         self.techniques = techniques
         self.mitigations = mitigations
         self.groups = groups
+        self.software = software
 
 
     def create_tactic_notes(self):
@@ -68,6 +69,13 @@ class MarkdownGenerator():
                 content += f"\n### Permissions Required\n"
                 for permission in technique.permissions_required:
                     content += f"- {permission}\n"
+
+                content += f"\n### Procedure Examples\n"
+                if technique.software:
+                    content += f"| ID | Name | Description |\n| --- | --- | --- |\n"
+                    for sw in technique.software:
+                        description = sw['description'].replace('\n', '<br />')
+                        content += f"| [[{sw['software'].name}\|{sw['software'].id}]] | {sw['software'].name} | {description} |\n"
 
                 content += f"\n### Mitigations\n"
                 if technique.mitigations:
@@ -139,6 +147,13 @@ class MarkdownGenerator():
                     for technique in group.techniques_used:
                         description = technique['description'].replace('\n', '<br />')
                         content += f"| [[{technique['technique'].name}\|{technique['technique'].id}]] | {technique['technique'].name} | {description} |\n"
+
+                content += f"### Software\n"
+
+                if group.software_used:
+                    content += f"| ID | Name |\n| --- | --- |\n"
+                    for sw in group.software_used:
+                        content += f"| [[{sw['software'].name}\|{sw['software'].id}]] | {sw['software'].name} |\n"
 
                 fd.write(content)
 
@@ -234,3 +249,36 @@ class MarkdownGenerator():
             fd.write(json.dumps(canvas, indent=2))
             
 
+    def create_software_notes(self):
+        software_dir = os.path.join(self.output_dir, "software")
+        if not os.path.exists(software_dir):
+            os.mkdir(software_dir)
+
+        for software in self.software:
+            software_file = os.path.join(software_dir, f"{software.name}.md")
+
+            with open(software_file, 'w') as fd:
+                content = f"---\nalias: {software.id}\n---\n\n"
+
+                content += f"## {software.id}\n\n"
+                content += f"{software.description}\n\n\n"
+
+
+                content += f"### Techniques Used\n"
+                if software.techniques_used:
+                    content += f"| ID | Name | Use |\n| --- | --- | --- |\n"
+                    for tech in software.techniques_used:
+                        description = tech['description'].replace('\n', '<br />')
+                        content += f"| [[{tech['technique'].name}\|{tech['technique'].id}]] | {tech['technique'].name} | {description} |\n"
+
+                content += f"\n### Groups That Use This Software\n"
+                if software.groups:
+                    content += f"| ID | Name |\n| --- | --- |\n"
+                    for group in software.groups:
+                        content += f"| [[{group['group'].name}\|{group['group'].id}]] | {group['group'].name} |\n"
+
+                content += f"\n\n---\n### References\n\n"
+                for ref in software.references.keys():
+                    content += f"- {ref}: {software.references[ref]}\n"
+
+                fd.write(content)

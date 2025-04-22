@@ -1,7 +1,7 @@
 
 class MITREObject():
     """
-    Define a tactic (x-mitre-tactic)
+    Define a generic MITRE Object
     """
 
     def __init__(self, name):
@@ -62,6 +62,7 @@ class MITRETechnique(MITREObject):
         self._kill_chain_phases = list()
         self._mitigations = list()
         self._groups = list()
+        self._software = list()
 
     @property
     def internal_id(self):
@@ -122,6 +123,14 @@ class MITRETechnique(MITREObject):
     def groups(self, group:dict):
         self.groups.append(group)
 
+    @property
+    def software(self):
+        return self._software
+
+    @software.setter
+    def software(self, software:dict):
+        self.software.append(software)
+
 
 class MITREMitigation(MITREObject):
     """
@@ -166,6 +175,7 @@ class MITREGroup(MITREObject):
         MITREObject.__init__(self, name)
         self._aliases = list()
         self._techniques_used = list()
+        self._software_used = list()
 
     @property
     def internal_id(self):
@@ -182,6 +192,58 @@ class MITREGroup(MITREObject):
     @aliases.setter
     def aliases(self, alias):
         self._aliases = alias
+
+    @property
+    def techniques_used(self):
+        return self._techniques_used
+
+    @techniques_used.setter
+    def techniques_used(self, technique_used:dict):
+        self._techniques_used.append(technique_used)
+
+    @property
+    def software_used(self):
+        return self._software_used
+
+    @software_used.setter
+    def software_used(self, software_used:dict):
+        self._software_used.append(software_used)
+
+
+class MITRESoftware(MITREObject):
+    """
+    Define a Software
+    """
+
+    def __init__(self, name):
+        MITREObject.__init__(self, name)
+        self._aliases = list()
+        self._groups = list()
+        self._techniques_used = list()
+
+    @property
+    def internal_id(self):
+        return self._internal_id
+
+    @internal_id.setter
+    def internal_id(self, internal_id):
+        self._internal_id = internal_id
+
+    @property
+    def aliases(self):
+        return self._aliases
+
+    @aliases.setter
+    def aliases(self, alias):
+        self._aliases = alias
+
+    @property
+    def groups(self):
+        return self._groups
+
+    @groups.setter
+    def groups(self, group:dict):
+        self._groups.append(group)
 
     @property
     def techniques_used(self):
