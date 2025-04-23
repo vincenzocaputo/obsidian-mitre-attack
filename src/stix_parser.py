@@ -3,6 +3,8 @@ from tqdm import tqdm
 from stix2 import Filter
 from stix2 import MemoryStore
 import requests
+import json
+
 from .models import (MITRETactic,
                      MITRETechnique,
                      MITREMitigation,
@@ -18,15 +20,58 @@ class StixParser():
     """
 
     def __init__(self, repo_url, domain, version=None):
-        self.url = repo_url
-        self.domain = domain
+        mitre_repo_url = "https://raw.githubusercontent.com/mitre-attack/attack-stix-data/master"
 
-        logger.info(f"Downloading STIX data. Domain: {domain} Version: {version or 'latest'}")
-        if version:
-            stix_json = requests.get(f"{self.url}/{domain}/{domain}-{version}.json").json()
+        if repo_url != mitre_repo_url:
+            logger.warning("You have defined a different source for ATT&CK STIX data. The domain and version option will be ignored.")
+            if repo_url.startswith('http'):
+                response = requests.get(repo_url)
+                if response.status_code == 200:
+                    try:
+                        stix_json = response.json()
+                    except requests.JSONDecodeError:
+                        logger.critical(f"The STIX data at {repo_url} is not valid.")
+                        exit(-1)
+                else:
+                    logger.critical(f"An error while reaching the remote source: {response.status_code} - {response.reason}")
+                    exit(-1)
+            else:
+                try:
+                    with open(repo_url, 'r') as fd:
+                        stix_json = json.loads(fd.read())
+                except json.JSONDecodeError:
+                    logger.critical("You have provided an invalid JSON file")
+                    exit(-1)
+                except FileNotFoundError:
+                    logger.critical("The file defined in the config.yml does not exist")
+                    exit(-1)
         else:
-            stix_json = requests.get(f"{self.url}/{domain}/{domain}.json").json()
-
+            if version:
+                logger.info(f"Downloading STIX data for domain {domain}, version {version}")
+                response = requests.get(f"{repo_url}/{domain}/{domain}-{version}.json")
+                if response.status_code == 200:
+                    try:
+                        stix_json = response.json()
+                    except requests.JSONDecodeError:
+                        logger.critical(f"The STIX data at {repo_url} is not valid.")
+                        exit(-1)
+                else:
+                    logger.critical(f"An error while reaching the remote source: {response.status_code} - {response.reason}")
+                    exit(-1)
+            else:
+                response = requests.get(f"{repo_url}/{domain}/{domain}.json")
+                if response.status_code == 200:
+                    try:
+                        stix_json = response.json()
+                    except requests.RequestsJSONDecodeError:
+                        logger.critical(f"The STIX data at {repo_url} is not valid.")
+                        exit(-1)
+                else:
+                    logger.critical(f"An error while reaching the remote source: {response.status_code} - {response.reason}")
+                    exit(-1)
+        if not 'objects' in stix_json:
+            logger.critical("The source provided does not contain a valid STIX bundle")
+            exit(-1)
         self.src = MemoryStore(stix_data=stix_json['objects'])
 
     
@@ -94,7 +139,7 @@ class StixParser():
         self.techniques = list()
 
         for tech in tqdm(tech_stix):
-            if 'x_mitre_deprecated' not in tech or not tech['x_mitre_deprecated']:
+            if ('x_mitre_deprecated' not in tech or not tech['x_mitre_deprecated']) and not tech['revoked']:
                 technique_obj = MITRETechnique(tech['name'])
 
                 technique_obj.internal_id = tech['id']
@@ -154,8 +199,8 @@ class StixParser():
                     for technique in self.techniques:
                         refs = relationship.get('external_references', [])
                         for ext_ref in refs:
-                            mitigation_obj.references = (ext_ref['source_name'], ext_ref['url'])
-                            technique.references = (ext_ref['source_name'], ext_ref['url'])
+                            mitigation_obj.references = (ext_ref['source_name'], ext_ref.get('url',''))
+                            technique.references = (ext_ref['source_name'], ext_ref.get('url',''))
                         if technique.internal_id == relationship['target_ref']:
                             mitigation_obj.mitigates = {'technique': technique, 'description': relationship.get('description', '') }
                             technique.mitigations = {'mitigation': mitigation_obj, 'description': relationship.get('description', '') }

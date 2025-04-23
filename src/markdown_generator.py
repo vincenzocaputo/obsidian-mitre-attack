@@ -80,7 +80,7 @@ class MarkdownGenerator():
 
             tactics = []
             for kill_chain in technique.kill_chain_phases:
-                if kill_chain["kill_chain_name"] == 'mitre-attack':
+                if kill_chain["kill_chain_name"] in ('mitre-attack', 'mitre-mobile-attack', 'mitre-ics-attack'):
                     tactics += [ t.name for t in self.tactics if t.name.lower().replace(' ', '-') == kill_chain["phase_name"].lower() ]
 
             content = template.render(
@@ -282,7 +282,7 @@ class MarkdownGenerator():
             if technique.id in filtered_techniques or len(filtered_techniques) == 0:
                 if not technique.is_subtechnique:
                     for kill_chain in technique.kill_chain_phases:
-                        if kill_chain["kill_chain_name"] == 'mitre-attack':
+                        if kill_chain["kill_chain_name"] in ('mitre-attack', 'mitre-mobile-attack', 'mitre-ics-attack'):
                             tactic = [ t for t in self.tactics if t.name.lower().replace(' ', '-') == kill_chain["phase_name"].lower() ]
                             if tactic and len(tactic) > 0: 
                                 if tactic[0].name in rows.keys():
