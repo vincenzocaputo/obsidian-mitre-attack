@@ -2,6 +2,7 @@ from jinja2 import Environment, FileSystemLoader
 from stix2 import Filter
 from stix2 import MemoryStore
 from pathlib import Path
+from loguru import logger
 from . import ROOT
 
 import requests
@@ -291,29 +292,35 @@ class MarkdownGenerator():
                                     rows[tactic[0].name] = y
                                 x = columns[tactic[0].name] + 20
 
+                    technique_note_path = f"techniques/{technique.name}.md"
                     technique_node = {
                                 "type": "file",
-                                "file": f"techniques/{technique.name}.md",
+                                "file": technique_note_path,
                                 "id": uuid.uuid4().hex,
                                 "x": x,
                                 "y": y,
                                 "width": 450,
                                 "height": height
                             }
+                    if not os.path.exists(technique_note_path):
+                        logger.warning(f"The file {technique_note_path} does not exist.")
                     canvas["nodes"].append(technique_node)
                     y = y + height + 20
                     subtechniques = [ subt for subt in self.techniques if subt.is_subtechnique and technique.id in subt.id ]
                     if subtechniques:
                         for subt in subtechniques:
+                            subtech_note_path = f"techniques/{subt.name}.md"
                             subtech_node = {
                                         "type": "file",
-                                        "file": f"techniques/{subt.name}.md",
+                                        "file": subtech_note_path,
                                         "id": uuid.uuid4().hex,
                                         "x": x + 50,
                                         "y": y,
                                         "width": 400,
                                         "height": height
                                     }
+                            if not os.path.exists(subtech_note_path):
+                                logger.warning(f"The file {subtech_note_path} does not exist")
                             y = y + height + 20
                             canvas["nodes"].append(subtech_node)
                     
