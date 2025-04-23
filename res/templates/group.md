@@ -18,12 +18,14 @@ mitre-attack: {{mitre_attack}}
 ### Software
 | ID | Name | Description |
 | --- | --- | --- |
-{% for sw in software %}| [[{{sw['name']}}\|{{sw['id']}}]] | {{sw['name']}} | sw['description'] | parse_description(references) }} |
+{% for sw in software %}| [[{{sw['name']}}\|{{sw['id']}}]] | {{sw['name']}} | {{sw['description'] | parse_description(references) }} |
 {% endfor %}
 {% endif %}
 
 ## References
 {% for ref in references %}
-[^{{ref['id']}}]: [{{ref['source_name']}}]({{ref['url']}})
+{% if ref['url'] %}[^{{ref['id']}}]: [{{ref['source_name']}}]({{ref['url']}})
+{% else %}[^{{ref['id']}}]: {{ref['source_name']}}
+{% endif %}
 {% endfor %}
 

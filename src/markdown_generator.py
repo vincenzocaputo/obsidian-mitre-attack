@@ -70,11 +70,11 @@ class MarkdownGenerator():
                 if ref[0] == 'mitre-attack':
                     mitre_attack = ref[1]
                     continue
-                ref_url = ref[1]
-                if ref_url not in references:
-                    references[ref_url] = {
+                source_name = ref[0]
+                if source_name not in references:
+                    references[source_name] = {
                         'id': footnote_id,
-                        'source_name': ref[0]
+                        'url': ref[1]
                     }
                     footnote_id += 1
 
@@ -102,8 +102,8 @@ class MarkdownGenerator():
                                  "description": m["description"]} for m in technique.mitigations],
                     subtechniques = [ subt for subt in self.techniques if subt.is_subtechnique and technique.id in subt.id ],
                     references = [{"id": value["id"],
-                                   "source_name": value["source_name"],
-                                   "url": url} for url, value in references.items() ]
+                                   "source_name": source_name,
+                                   "url": value["url"]} for source_name, value in references.items() ]
             )
 
             technique_file = os.path.join(techniques_dir, f"{technique.name}.md")
@@ -128,11 +128,11 @@ class MarkdownGenerator():
                 if ref[0] == 'mitre-attack':
                     mitre_attack = ref[1]
                     continue
-                ref_url = ref[1]
-                if ref_url not in references:
-                    references[ref_url] = {
-                            'id': footnote_id,
-                            'source_name': ref[0]
+                source_name = ref[0]
+                if source_name not in references:
+                    references[source_name] = {
+                        'id': footnote_id,
+                        'url': ref[1]
                     }
                     footnote_id += 1
 
@@ -145,8 +145,8 @@ class MarkdownGenerator():
                                    "id": t["technique"].id,
                                    "description": t["description"]} for t in mitigation.mitigates ],
                     references = [{"id": value["id"],
-                                   "source_name": value["source_name"],
-                                   "url": url} for url, value in references.items() ]
+                                   "source_name": source_name,
+                                   "url": value["url"]} for source_name, value in references.items() ]
             )
             with open(mitigation_file, 'w') as fd:
                 fd.write(content)
@@ -168,11 +168,11 @@ class MarkdownGenerator():
                 if ref[0] == 'mitre-attack':
                     mitre_attack = ref[1]
                     continue
-                ref_url = ref[1]
-                if ref_url not in references:
-                    references[ref_url] = {
-                            'id': footnote_id,
-                            'source_name': ref[0]
+                source_name = ref[0]
+                if source_name not in references:
+                    references[source_name] = {
+                        'id': footnote_id,
+                        'url': ref[1]
                     }
                     footnote_id += 1
 
@@ -188,8 +188,8 @@ class MarkdownGenerator():
                                  "id": s["software"].id,
                                  "description": s["description"]} for s in group.software_used],
                     references = [{"id": value["id"],
-                                   "source_name": value["source_name"],
-                                   "url": url} for url, value in references.items() ]
+                                   "source_name": source_name,
+                                   "url": value["url"]} for source_name, value in references.items() ]
             )
             with open(group_file, 'w') as fd:
                 fd.write(content)
@@ -209,11 +209,11 @@ class MarkdownGenerator():
                 if ref[0] == 'mitre-attack':
                     mitre_attack = ref[1]
                     continue
-                ref_url = ref[1]
-                if ref_url not in references:
-                    references[ref_url] = {
-                            'id': footnote_id,
-                            'source_name': ref[0]
+                source_name = ref[0]
+                if source_name not in references:
+                    references[source_name] = {
+                        'id': footnote_id,
+                        'url': ref[1]
                     }
                     footnote_id += 1
 
@@ -240,8 +240,8 @@ class MarkdownGenerator():
                     techniques = techniques_used,
                     groups = groups,
                     references = [{"id": value["id"],
-                                   "source_name": value["source_name"],
-                                   "url": url} for url, value in references.items() ]
+                                   "source_name": source_name,
+                                   "url": value["url"]} for source_name, value in references.items() ]
             )
             software_file = os.path.join(software_dir, f"{software.name}.md")
 

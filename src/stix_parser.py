@@ -151,8 +151,7 @@ class StixParser():
                     if ext_ref['source_name'] == 'mitre-attack':
                         technique_obj.id = ext_ref['external_id']
                         
-                    if 'url' in ext_ref:
-                        technique_obj.references = (ext_ref['source_name'], ext_ref['url'])
+                    technique_obj.references = (ext_ref['source_name'], ext_ref.get('url',''))
 
                 kill_chain = tech.get('kill_chain_phases', [])
 
@@ -190,8 +189,7 @@ class StixParser():
                 for ext_ref in ext_refs:
                     if ext_ref['source_name'] == 'mitre-attack':
                         mitigation_obj.id = ext_ref['external_id']
-                    if 'url' in ext_ref:
-                        mitigation_obj.references = (ext_ref['source_name'], ext_ref['url'])
+                    mitigation_obj.references = (ext_ref['source_name'], ext_ref.get('url',''))
                         
                 mitigation_relationships = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'mitigates'), Filter('source_ref', '=', mitigation_obj.internal_id) ])
 
@@ -230,8 +228,7 @@ class StixParser():
                     if ext_ref['source_name'] == 'mitre-attack':
                         group_obj.id = ext_ref['external_id']
                         
-                    if 'url' in ext_ref:
-                        group_obj.references = (ext_ref['source_name'], ext_ref['url'])
+                    group_obj.references = (ext_ref['source_name'], ext_ref.get('url', ''))
 
                 group_relationships = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', group_obj.internal_id) ])
 
@@ -272,13 +269,16 @@ class StixParser():
                     if ext_ref['source_name'] == 'mitre-attack':
                         software_obj.id = ext_ref['external_id']
                         
-                    if 'url' in ext_ref:
-                        software_obj.references = (ext_ref['source_name'], ext_ref['url'])
+                    software_obj.references = (ext_ref['source_name'], ext_ref.get('url', ''))
 
                 group_relationships = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('target_ref', '=', software_obj.internal_id) ])
                 for relationship in group_relationships:
                     for group in self.groups:
                         if group.internal_id == relationship['source_ref']:
+                            refs = relationship.get('external_references', [])
+                            for ext_ref in refs:
+                                software_obj.references = (ext_ref['source_name'], ext_ref['url'])
+                                group.references = (ext_ref['source_name'], ext_ref['url'])
                             group.software_used = {'software': software_obj, 'description': relationship.get('description', '')}
                             software_obj.groups = {'group': group, 'description': relationship.get('description', '')}
 

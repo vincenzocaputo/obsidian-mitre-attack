@@ -26,6 +26,8 @@ mitre-attack: {{mitre_attack}}
 
 ## References
 {% for ref in references %}
-[^{{ref['id']}}]: [{{ref['source_name']}}]({{ref['url']}})
+{% if ref['url'] %}[^{{ref['id']}}]: [{{ref['source_name']}}]({{ref['url']}})
+{% else %}[^{{ref['id']}}]: {{ref['source_name']}}
+{% endif %}
 {% endfor %}
 
