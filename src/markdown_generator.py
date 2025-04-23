@@ -247,7 +247,7 @@ class MarkdownGenerator():
             with open(software_file, 'w') as fd:
                 fd.write(content)
 
-    def create_canvas(self, canvas_name, filtered_techniques):
+    def create_canvas(self, canvas_name, filtered_techniques=[]):
         canvas = {
                 "nodes": [],
                 "edges": []
@@ -278,7 +278,7 @@ class MarkdownGenerator():
         y = 50
         max_height = y
         for technique in self.techniques:
-            if technique.id in filtered_techniques:
+            if technique.id in filtered_techniques or len(filtered_techniques) == 0:
                 if not technique.is_subtechnique:
                     for kill_chain in technique.kill_chain_phases:
                         if kill_chain["kill_chain_name"] == 'mitre-attack':

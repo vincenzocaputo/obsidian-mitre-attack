@@ -48,18 +48,28 @@ if __name__ == '__main__':
             logger.error("Provide a file path")
     elif args.generate_matrix:
         if args.path:
-            if os.path.isfile(args.path) and args.path.endswith('.md'):
-                parser = StixParser(config['repository-url'], domain, config.get('version'))
-                logger.info("Extracting objects from STIX data")
-                parser.get_data(techniques=True, tactics=True)
-                markdown_reader = MarkdownReader(args.path)
-                found_techniques = markdown_reader.find_techniques()
-                markdown_generator = MarkdownGenerator(techniques=parser.techniques, tactics=parser.tactics)
-                markdown_generator.create_canvas(re.sub('.md$',"",args.path), found_techniques)
+            parser = StixParser(config['repository-url'], domain, config.get('version'))
+            logger.info("Extracting objects from STIX data")
+            parser.get_data(techniques=True, tactics=True)
+
+            if os.path.isfile(args.path):
+                if args.path.endswith('.md'):
+                    logger.info("Reading the Markdown note")
+                    markdown_reader = MarkdownReader(args.path)
+                    found_techniques = markdown_reader.find_techniques()
+                    canvas_path = re.sub('.md$',"",args.path)
+                else:
+                    logger.error("You must provide a path to a .md file")
+                    exit(-1)
             else:
-                logger.error("You have not provided a valid markdown file path")
+                logger.warning("You have not provided a valid markdown file path. The full matrix will be generated.")
+                found_techniques = []
+                canvas_path = args.path
+
+            markdown_generator = MarkdownGenerator(techniques=parser.techniques, tactics=parser.tactics)
+            markdown_generator.create_canvas(canvas_path, found_techniques)
         else:
-            logger.error("Provide a file path")
+            logger.error("You must provide a valid file path")
             exit(-1)
     else:
         if args.output:
