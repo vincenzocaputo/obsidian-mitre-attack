@@ -68,7 +68,7 @@ class MarkdownGenerator():
             for ref in technique.references:
                 if ref[0] == 'mitre-attack':
                     mitre_attack = ref[1]
-                    pass
+                    continue
                 ref_url = ref[1]
                 if ref_url not in references:
                     references[ref_url] = {
@@ -126,7 +126,7 @@ class MarkdownGenerator():
             for ref in mitigation.references:
                 if ref[0] == 'mitre-attack':
                     mitre_attack = ref[1]
-                    pass
+                    continue
                 ref_url = ref[1]
                 if ref_url not in references:
                     references[ref_url] = {
@@ -166,7 +166,7 @@ class MarkdownGenerator():
             for ref in group.references:
                 if ref[0] == 'mitre-attack':
                     mitre_attack = ref[1]
-                    pass
+                    continue
                 ref_url = ref[1]
                 if ref_url not in references:
                     references[ref_url] = {
@@ -207,7 +207,7 @@ class MarkdownGenerator():
             for ref in software.references:
                 if ref[0] == 'mitre-attack':
                     mitre_attack = ref[1]
-                    pass
+                    continue
                 ref_url = ref[1]
                 if ref_url not in references:
                     references[ref_url] = {
