@@ -38,6 +38,7 @@ In the `config.yml` file, you can change the following options:
 
 - **repository-url**: The base URL pointing to the mitre/attack-stix-data repository. You can define also a local file path or other URLs. However, remember that this project is intended to parse data from the MITRE ATT&CK framework. Providing different JSON files may break the script execution.
 - **version**: The ATT&CK version to pull. You can remove this entry to pull the latest version. Please note that newer versions may not have been tested and some errors may occur. In case of an error, do not hesitate to open a problem.
+- **mitre-object-types**: This option lists all the type of MITRE objects that are parsed by the script. You can set to `false` the options corresponding to the types of objects for which you don't want to create markdown notes in your vault.
 
 
 #### Run the script
@@ -66,6 +67,7 @@ options:
   --generate-matrix     Create ATT&CK matrix starting from a markdown note file
   --path PATH           Filepath to the markdown note file
 ```
+
 
 
 ## Images and Examples
