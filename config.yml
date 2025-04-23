@@ -1,4 +1,8 @@
-repository_url: https://raw.githubusercontent.com/mitre-attack/attack-stix-data/master
-domain: enterprise-attack
-version: 15.1
-output_dir: output
+repository-url: https://raw.githubusercontent.com/mitre-attack/attack-stix-data/master
+version: 17.0
+mitre-object-types:
+  tactics: true
+  techniques: true
+  mitigations: true
+  groups: true
+  software: true

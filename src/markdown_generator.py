@@ -1,98 +1,120 @@
+from jinja2 import Environment, FileSystemLoader
 from stix2 import Filter
 from stix2 import MemoryStore
 from pathlib import Path
+from loguru import logger
 from . import ROOT
 
 import requests
 import os
 import json
 import uuid
+import re
 
 class MarkdownGenerator():
 
-    def __init__(self, output_dir=None, tactics=[], techniques=[], mitigations=[], groups=[]):
+    def __init__(self, output_dir=None, tactics=[], techniques=[], mitigations=[], groups=[], software=[]):
         if output_dir:
             self.output_dir = os.path.join(ROOT, output_dir)
         self.tactics = tactics
         self.techniques = techniques
         self.mitigations = mitigations
         self.groups = groups
+        self.software = software
+        self.environment = Environment(loader=FileSystemLoader(os.path.join(ROOT, "res/templates/")))
+        self.environment.filters["parse_description"] = MarkdownGenerator.parse_description
 
+    @staticmethod
+    def parse_description(description, references=[]):
+        description = description.replace('\n', '<br>')
+        description = description.replace('</code>', '`')
+        description = description.replace('<code>', '`')
+
+        for ref in references:
+            description = re.sub(fr'\(Citation: {ref["source_name"]}\)', f'[^{ref["id"]}] ', description)
+        return description
 
     def create_tactic_notes(self):
+        template = self.environment.get_template("tactic.md")
         tactics_dir = os.path.join(self.output_dir, "tactics")
         if not os.path.exists(tactics_dir):
             os.mkdir(tactics_dir)
 
         for tactic in self.tactics:
+            for ref in tactic.references:
+                if ref[0] == 'mitre-attack':
+                    mitre_attack = ref[1]
+
+            content = template.render(
+                    aliases = [tactic.id],
+                    mitre_attack = mitre_attack,
+                    title = tactic.id,
+                    description = tactic.description
+            )
             tactic_file = os.path.join(tactics_dir, f"{tactic.name}.md")
 
             with open(tactic_file, 'w') as fd:
-                content = f"---\nalias: {tactic.id}\n---"
-                content += f"\n\n## {tactic.id}\n"
-                content += f"\n{tactic.description}\n\n---\n"
-                
-                content += f"### References\n"
-                for ref in tactic.references.keys():
-                    content += f"- {ref}: {tactic.references[ref]}\n"
                 fd.write(content)
 
 
     def create_technique_notes(self):
+        template = self.environment.get_template("technique.md")
         techniques_dir = os.path.join(self.output_dir, "techniques")
         if not os.path.exists(techniques_dir):
             os.mkdir(techniques_dir)
 
         for technique in self.techniques:
+            footnote_id = 1
+            references = {}
+            for ref in technique.references:
+                if ref[0] == 'mitre-attack':
+                    mitre_attack = ref[1]
+                    continue
+                source_name = ref[0]
+                if source_name not in references:
+                    references[source_name] = {
+                        'id': footnote_id,
+                        'url': ref[1]
+                    }
+                    footnote_id += 1
+
+            tactics = []
+            for kill_chain in technique.kill_chain_phases:
+                if kill_chain["kill_chain_name"] in ('mitre-attack', 'mitre-mobile-attack', 'mitre-ics-attack'):
+                    tactics += [ t.name for t in self.tactics if t.name.lower().replace(' ', '-') == kill_chain["phase_name"].lower() ]
+
+            content = template.render(
+                    aliases = [technique.id],
+                    mitre_attack = mitre_attack,
+                    tactics = tactics,
+                    platforms = technique.platforms,
+                    permissions_required = technique.permissions_required,
+                    title = technique.id,
+                    description = technique.description,
+                    procedures = [{"name": sw["software"].name,
+                                 "id": sw["software"].id,
+                                 "description": sw["description"]} for sw in technique.software] +
+                                 [{"name": g["group"].name,
+                                 "id": g["group"].id,
+                                 "description": g["description"]} for g in technique.groups],
+                    mitigations = [{"name": m["mitigation"].name,
+                                 "id": m["mitigation"].id,
+                                 "description": m["description"]} for m in technique.mitigations],
+                    subtechniques = [ subt for subt in self.techniques if subt.is_subtechnique and technique.id in subt.id ],
+                    references = [{"id": value["id"],
+                                   "source_name": source_name,
+                                   "url": value["url"]} for source_name, value in references.items() ]
+            )
+
             technique_file = os.path.join(techniques_dir, f"{technique.name}.md")
 
             with open(technique_file, 'w') as fd:
-                content = f"---\nalias: {technique.id}\n---\n\n"
-
-                content += f"## {technique.id}\n\n"
-                content += f"{technique.description}\n\n\n"
-
-
-                content += f"### Tactic\n"
-                for kill_chain in technique.kill_chain_phases:
-                    if kill_chain['kill_chain_name'] == 'mitre-attack':
-                        tactic = [ t for t in self.tactics if t.name.lower().replace(' ', '-') == kill_chain['phase_name'].lower() ]
-                        if tactic:
-                            for t in tactic:
-                                content += f"- [[{t.name}]] ({t.id})\n" 
-
-                content += f"\n### Platforms\n"
-                for platform in technique.platforms:
-                    content += f"- {platform}\n"
-
-                content += f"\n### Permissions Required\n"
-                for permission in technique.permissions_required:
-                    content += f"- {permission}\n"
-
-                content += f"\n### Mitigations\n"
-                if technique.mitigations:
-                    content += f"\n| ID | Name | Description |\n| --- | --- | --- |\n"
-                    for mitigation in technique.mitigations:
-                        description = mitigation['description'].replace('\n', '<br />')
-                        content += f"| [[{mitigation['mitigation'].name}\|{mitigation['mitigation'].id}]] | {mitigation['mitigation'].name} | {description} |\n"
-
-                if not technique.is_subtechnique:
-                    content += f"\n### Sub-techniques\n"
-                    subtechniques = [ subt for subt in self.techniques if subt.is_subtechnique and technique.id in subt.id ]
-                    if subtechniques:
-                        content += f"\n| ID | Name |\n| --- | --- |\n"
-                    for subt in subtechniques:
-                        content += f"| [[{subt.name}\|{subt.id}]] | {subt.name} |\n"
-
-
-                content += f"\n\n---\n### References\n\n"
-                for ref in technique.references.keys():
-                    content += f"- {ref}: {technique.references[ref]}\n"
-
                 fd.write(content)
 
 
     def create_mitigation_notes(self):
+        template = self.environment.get_template("mitigation.md")
+        
         mitigations_dir = os.path.join(self.output_dir, "mitigations")
         if not os.path.exists(mitigations_dir):
             os.mkdir(mitigations_dir)
@@ -100,25 +122,39 @@ class MarkdownGenerator():
         for mitigation in self.mitigations:
             mitigation_file = os.path.join(mitigations_dir, f"{mitigation.name}.md")
 
+            footnote_id = 1
+            references = {}
+            for ref in mitigation.references:
+                if ref[0] == 'mitre-attack':
+                    mitre_attack = ref[1]
+                    continue
+                source_name = ref[0]
+                if source_name not in references:
+                    references[source_name] = {
+                        'id': footnote_id,
+                        'url': ref[1]
+                    }
+                    footnote_id += 1
+
+            content = template.render(
+                    aliases = [mitigation.id],
+                    mitre_attack = mitre_attack,
+                    title = mitigation.id,
+                    description = mitigation.description,
+                    techniques = [{"name": t["technique"].name,
+                                   "id": t["technique"].id,
+                                   "description": t["description"]} for t in mitigation.mitigates ],
+                    references = [{"id": value["id"],
+                                   "source_name": source_name,
+                                   "url": value["url"]} for source_name, value in references.items() ]
+            )
             with open(mitigation_file, 'w') as fd:
-                content = f"---\nalias: {mitigation.id}\n---\n\n"
-
-                content += f"## {mitigation.id}\n\n"
-                content += f"{mitigation.description}\n\n\n"
-
-
-                content += f"### Techniques Addressed by Mitigation\n"
-                if mitigation.mitigates:
-                    content += f"\n| ID | Name | Description |\n| --- | --- | --- |\n"
-                    for technique in mitigation.mitigates:
-                        description = technique['description'].replace('\n', '<br />')
-                        content += f"| [[{technique['technique'].name}\|{technique['technique'].id}]] | {technique['technique'].name} | {description} |\n"
-
-
                 fd.write(content)
 
 
     def create_group_notes(self):
+        template = self.environment.get_template("group.md")
+
         groups_dir = os.path.join(self.output_dir, "groups")
         if not os.path.exists(groups_dir):
             os.mkdir(groups_dir)
@@ -126,24 +162,93 @@ class MarkdownGenerator():
         for group in self.groups:
             group_file = os.path.join(groups_dir, f"{group.name}.md")
 
+            footnote_id = 1
+            references = {}
+            for ref in group.references:
+                if ref[0] == 'mitre-attack':
+                    mitre_attack = ref[1]
+                    continue
+                source_name = ref[0]
+                if source_name not in references:
+                    references[source_name] = {
+                        'id': footnote_id,
+                        'url': ref[1]
+                    }
+                    footnote_id += 1
+
+            content = template.render(
+                    aliases = group.aliases,
+                    mitre_attack = mitre_attack,
+                    title = group.id,
+                    description = group.description,
+                    techniques = [{"name": t["technique"].name,
+                                   "id": t["technique"].id,
+                                   "description": t["description"]} for t in group.techniques_used],
+                    software = [{"name": s["software"].name,
+                                 "id": s["software"].id,
+                                 "description": s["description"]} for s in group.software_used],
+                    references = [{"id": value["id"],
+                                   "source_name": source_name,
+                                   "url": value["url"]} for source_name, value in references.items() ]
+            )
             with open(group_file, 'w') as fd:
-                content = f"---\nalias: {', '.join(group.aliases)}\n---\n\n"
-
-                content += f"## {group.id}\n\n"
-                content += f"{group.description}\n\n\n"
-
-                content += f"### Techniques Used\n"
-
-                if group.techniques_used:
-                    content += f"\n| ID | Name | Use |\n| --- | --- | --- |\n"
-                    for technique in group.techniques_used:
-                        description = technique['description'].replace('\n', '<br />')
-                        content += f"| [[{technique['technique'].name}\|{technique['technique'].id}]] | {technique['technique'].name} | {description} |\n"
-
                 fd.write(content)
 
+    def create_software_notes(self):
+        template = self.environment.get_template("software.md")
 
-    def create_canvas(self, canvas_name, filtered_techniques):
+        software_dir = os.path.join(self.output_dir, "software")
+        if not os.path.exists(software_dir):
+            os.mkdir(software_dir)
+
+
+        for software in self.software:
+            footnote_id = 1
+            references = {}
+            for ref in software.references:
+                if ref[0] == 'mitre-attack':
+                    mitre_attack = ref[1]
+                    continue
+                source_name = ref[0]
+                if source_name not in references:
+                    references[source_name] = {
+                        'id': footnote_id,
+                        'url': ref[1]
+                    }
+                    footnote_id += 1
+
+            techniques_used = []
+            for tech in software.techniques_used:
+                techniques_used.append({
+                    'name': tech["technique"].name,
+                    'id': tech["technique"].id,
+                    'description': tech["description"]
+                })
+            groups = []
+            for group in software.groups:
+                groups.append({
+                        'name': group["group"].name,
+                        'id': group["group"].id,
+                        'description': group["description"]
+                    })
+
+            content = template.render(
+                    aliases = [software.id],
+                    mitre_attack = mitre_attack,
+                    title = software.id,
+                    description = software.description,
+                    techniques = techniques_used,
+                    groups = groups,
+                    references = [{"id": value["id"],
+                                   "source_name": source_name,
+                                   "url": value["url"]} for source_name, value in references.items() ]
+            )
+            software_file = os.path.join(software_dir, f"{software.name}.md")
+
+            with open(software_file, 'w') as fd:
+                fd.write(content)
+
+    def create_canvas(self, canvas_name, filtered_techniques=[]):
         canvas = {
                 "nodes": [],
                 "edges": []
@@ -174,12 +279,12 @@ class MarkdownGenerator():
         y = 50
         max_height = y
         for technique in self.techniques:
-            if technique.id in filtered_techniques:
+            if technique.id in filtered_techniques or len(filtered_techniques) == 0:
                 if not technique.is_subtechnique:
                     for kill_chain in technique.kill_chain_phases:
-                        if kill_chain['kill_chain_name'] == 'mitre-attack':
-                            tactic = [ t for t in self.tactics if t.name.lower().replace(' ', '-') == kill_chain['phase_name'].lower() ]
-                            if tactic:
+                        if kill_chain["kill_chain_name"] in ('mitre-attack', 'mitre-mobile-attack', 'mitre-ics-attack'):
+                            tactic = [ t for t in self.tactics if t.name.lower().replace(' ', '-') == kill_chain["phase_name"].lower() ]
+                            if tactic and len(tactic) > 0: 
                                 if tactic[0].name in rows.keys():
                                     y = rows[tactic[0].name]
                                 else:
@@ -187,31 +292,37 @@ class MarkdownGenerator():
                                     rows[tactic[0].name] = y
                                 x = columns[tactic[0].name] + 20
 
+                    technique_note_path = f"techniques/{technique.name}.md"
                     technique_node = {
                                 "type": "file",
-                                "file": f"techniques/{technique.name}.md",
+                                "file": technique_note_path,
                                 "id": uuid.uuid4().hex,
                                 "x": x,
                                 "y": y,
                                 "width": 450,
                                 "height": height
                             }
-                    canvas['nodes'].append(technique_node)
+                    if not os.path.exists(technique_note_path):
+                        logger.warning(f"The file {technique_note_path} does not exist.")
+                    canvas["nodes"].append(technique_node)
                     y = y + height + 20
                     subtechniques = [ subt for subt in self.techniques if subt.is_subtechnique and technique.id in subt.id ]
                     if subtechniques:
                         for subt in subtechniques:
+                            subtech_note_path = f"techniques/{subt.name}.md"
                             subtech_node = {
                                         "type": "file",
-                                        "file": f"techniques/{subt.name}.md",
+                                        "file": subtech_note_path,
                                         "id": uuid.uuid4().hex,
                                         "x": x + 50,
                                         "y": y,
                                         "width": 400,
                                         "height": height
                                     }
+                            if not os.path.exists(subtech_note_path):
+                                logger.warning(f"The file {subtech_note_path} does not exist")
                             y = y + height + 20
-                            canvas['nodes'].append(subtech_node)
+                            canvas["nodes"].append(subtech_node)
                     
                     rows[tactic[0].name] = y
                     if y > max_height:
@@ -227,7 +338,7 @@ class MarkdownGenerator():
                         "width": 500,
                         "height": max_height + 20
                     }
-            canvas['nodes'].append(container_node)
+            canvas["nodes"].append(container_node)
                         
             
         with open(f"{canvas_name}.canvas", 'w') as fd:
