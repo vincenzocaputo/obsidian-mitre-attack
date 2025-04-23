@@ -21,6 +21,7 @@ class StixParser():
         self.url = repo_url
         self.domain = domain
 
+        logger.info(f"Downloading STIX data. Domain: {domain} Version: {version or 'latest'}")
         if version:
             stix_json = requests.get(f"{self.url}/{domain}/{domain}-{version}.json").json()
         else:
@@ -29,17 +30,32 @@ class StixParser():
         self.src = MemoryStore(stix_data=stix_json['objects'])
 
     
-    def get_data(self):
-        logger.info("Extracting Tactics...")
-        self._get_tactics()
-        logger.info("Extracting Techniques...")
-        self._get_techniques()
-        logger.info("Extracting Mitigations...")
-        self._get_mitigations()
-        logger.info("Extracting Groups...")
-        self._get_groups()
-        logger.info("Extracting Software...")
-        self._get_software()
+    def get_data(self, tactics=False,
+                 techniques=False,
+                 mitigations=False,
+                 groups=False,
+                 software=False):
+        
+        self.tactics=list()
+        self.techniques=list()
+        self.mitigations=list()
+        self.groups=list()
+        self.software=list()
+        if tactics:
+            logger.info("Extracting Tactics...")
+            self._get_tactics()
+        if techniques:
+            logger.info("Extracting Techniques...")
+            self._get_techniques()
+        if mitigations:
+            logger.info("Extracting Mitigations...")
+            self._get_mitigations()
+        if groups:
+            logger.info("Extracting Groups...")
+            self._get_groups()
+        if software:
+            logger.info("Extracting Software...")
+            self._get_software()
 
 
     def _get_tactics(self):

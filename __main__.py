@@ -34,14 +34,12 @@ if __name__ == '__main__':
             logger.error(f"The domain {domain} is not suported")
             exit(-1)
 
-    logger.info(f"Downloading STIX data. Domain: {domain} Version: {config.get('version') or 'latest'}")
-    parser = StixParser(config['repository_url'], domain, config.get('version'))
-
-    logger.info("Extracting objects from STIX data")
-    parser.get_data()
     if args.generate_hyperlinks:
         if args.path:
             if os.path.isfile(args.path) and args.path.endswith('.md'):
+                parser = StixParser(config['repository-url'], domain, config.get('version'))
+                logger.info("Extracting objects from STIX data")
+                parser.get_data(techniques=True)
                 markdown_reader = MarkdownReader(args.path)
                 markdown_reader.create_hyperlinks(parser.techniques)
             else:
@@ -51,36 +49,50 @@ if __name__ == '__main__':
     elif args.generate_matrix:
         if args.path:
             if os.path.isfile(args.path) and args.path.endswith('.md'):
+                parser = StixParser(config['repository-url'], domain, config.get('version'))
+                logger.info("Extracting objects from STIX data")
+                parser.get_data(techniques=True, tactics=True)
                 markdown_reader = MarkdownReader(args.path)
                 found_techniques = markdown_reader.find_techniques()
-                markdown_generator = MarkdownGenerator(tactics=parser.tactics, techniques=parser.techniques, mitigations=parser.mitigations, groups=parser.groups, software=parser.software)
+                markdown_generator = MarkdownGenerator(techniques=parser.techniques, tactics=parser.tactics)
                 markdown_generator.create_canvas(re.sub('.md$',"",args.path), found_techniques)
             else:
                 logger.error("You have not provided a valid markdown file path")
         else:
             logger.error("Provide a file path")
+            exit(-1)
     else:
         if args.output:
             if os.path.isdir(args.output):
                 output_dir = args.output
             else:
-                logger.error("You have not provided a valid output directory")
+                logger.warning("You have not provided an existing vault. Creating a new directory...")
+                os.mkdir(args.output)
+                output_dir = args.output
         else:
-            exit()
-
+            logger.error("You have not provided a valid output directory")
+            exit(-1)
+    
+        parser = StixParser(config['repository-url'], domain, config.get('version'))
+        logger.info("Extracting objects from STIX data")
+        parser.get_data(tactics=True, techniques=True, mitigations=True, groups=True, software=True)
         os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
         markdown_generator = MarkdownGenerator(output_dir, parser.tactics, parser.techniques, parser.mitigations, parser.groups, parser.software)
-        logger.info("Creating Tactic notes")
-        markdown_generator.create_tactic_notes()
-        logger.info("Creating Technique notes")
-        markdown_generator.create_technique_notes()
-        logger.info("Creating Mitigation notes")
-        markdown_generator.create_mitigation_notes()
-        logger.info("Creating Group notes")
-        markdown_generator.create_group_notes()
-        logger.info("Creating Software notes")
-        markdown_generator.create_software_notes()
-
+        if config['mitre-object-types']['tactics']:
+            logger.info("Creating Tactic notes")
+            markdown_generator.create_tactic_notes()
+        if config['mitre-object-types']['techniques']:
+            logger.info("Creating Technique notes")
+            markdown_generator.create_technique_notes()
+        if config['mitre-object-types']['mitigations']:
+            logger.info("Creating Mitigation notes")
+            markdown_generator.create_mitigation_notes()
+        if config['mitre-object-types']['groups']:
+            logger.info("Creating Group notes")
+            markdown_generator.create_group_notes()
+        if config['mitre-object-types']['software']:
+            logger.info("Creating Software notes")
+            markdown_generator.create_software_notes()
         
         create_graph_json(output_dir)

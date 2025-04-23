@@ -283,7 +283,7 @@ class MarkdownGenerator():
                     for kill_chain in technique.kill_chain_phases:
                         if kill_chain["kill_chain_name"] == 'mitre-attack':
                             tactic = [ t for t in self.tactics if t.name.lower().replace(' ', '-') == kill_chain["phase_name"].lower() ]
-                            if tactic:
+                            if tactic and len(tactic) > 0: 
                                 if tactic[0].name in rows.keys():
                                     y = rows[tactic[0].name]
                                 else:
