@@ -302,8 +302,6 @@ class MarkdownGenerator():
                                 "width": 450,
                                 "height": height
                             }
-                    if not os.path.exists(technique_note_path):
-                        logger.warning(f"The file {technique_note_path} does not exist.")
                     canvas["nodes"].append(technique_node)
                     y = y + height + 20
                     subtechniques = [ subt for subt in self.techniques if subt.is_subtechnique and technique.id in subt.id ]
@@ -319,8 +317,6 @@ class MarkdownGenerator():
                                         "width": 400,
                                         "height": height
                                     }
-                            if not os.path.exists(subtech_note_path):
-                                logger.warning(f"The file {subtech_note_path} does not exist")
                             y = y + height + 20
                             canvas["nodes"].append(subtech_node)
                     
