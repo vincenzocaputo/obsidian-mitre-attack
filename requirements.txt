@@ -14,4 +14,4 @@ six==1.16.0
 stix2==3.0.1
 stix2-patterns==2.0.0
 tqdm==4.67.1
-urllib3==2.2.2
+urllib3==2.5.0
